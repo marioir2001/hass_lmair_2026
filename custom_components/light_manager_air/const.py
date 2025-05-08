@@ -142,6 +142,8 @@ CONF_COVER_TIMINGS = "cover_timings"
 CONF_TRAVEL_UP_TIME = "travel_up_time"
 CONF_TRAVEL_DOWN_TIME = "travel_down_time"
 CONF_CUSTOM_STOP_LOGIC = "custom_stop_logic"
+CONF_EXTERNAL_ENTITY = "external_entity"
+CONF_INVERT_DIRECTIONS = "invert_directions"
 
 # Schema for cover-timing
 COVER_TIMING_SCHEMA = vol.Schema({
@@ -149,6 +151,8 @@ COVER_TIMING_SCHEMA = vol.Schema({
     vol.Required(CONF_TRAVEL_UP_TIME): vol.Coerce(float),
     vol.Optional(CONF_TRAVEL_DOWN_TIME): vol.Coerce(float),
     vol.Optional(CONF_CUSTOM_STOP_LOGIC): vol.Coerce(bool),
+    vol.Optional(CONF_EXTERNAL_ENTITY, default=False): vol.Coerce(bool),
+    vol.Optional(CONF_INVERT_DIRECTIONS, default=False): vol.Coerce(bool),
 })
 
 CONF_ENABLE_MARKER_UPDATES = "enable_marker_updates"
