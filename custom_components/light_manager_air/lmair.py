@@ -19,7 +19,7 @@ class _LMConnector:
     """Handles the connection to the Light Manager, including discovery and code polling."""
     DEFAULT_TIMEOUT = 1000
     COMMAND_KEY = "cmd"
-    RECEIVE_IDENTIFIERS = ["rfhm,", "rfit,"]  # List of valid identifiers
+    RECEIVE_IDENTIFIERS = ["rfhm,", "rfit,", "rffs,"]  # List of valid identifiers
     DISCOVER_MESSAGE = "D"
     POLL_ENDPOINT = "/poll.htm"
 
