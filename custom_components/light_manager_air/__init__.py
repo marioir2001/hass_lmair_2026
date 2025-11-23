@@ -9,13 +9,26 @@ from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers import config_validation as cv
 
-from .const import DOMAIN, MAPPING_SCHEMA, CONF_MAPPINGS, CONF_ENTITY_CONVERSIONS, CONVERSION_SCHEMA, CONF_IGNORED_ZONES, CONF_COVER_TIMINGS, COVER_TIMING_SCHEMA
+from .const import (
+    ATTR_ENTRY_ID,
+    DOMAIN,
+    MAPPING_SCHEMA,
+    CONF_MAPPINGS,
+    CONF_ENTITY_CONVERSIONS,
+    CONVERSION_SCHEMA,
+    CONF_IGNORED_ZONES,
+    CONF_COVER_TIMINGS,
+    COVER_TIMING_SCHEMA,
+    SERVICE_RELOAD_FIXTURES,
+)
 from .coordinator import LightManagerAirCoordinator
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.DEBUG)
 
 PLATFORMS = [Platform.LIGHT, Platform.SCENE, Platform.COVER, Platform.SWITCH, Platform.WEATHER, Platform.SENSOR, Platform.EVENT]
+
+RELOAD_FIXTURES_SERVICE_SCHEMA = vol.Schema({vol.Optional(ATTR_ENTRY_ID): cv.string})
 
 CONFIG_SCHEMA = vol.Schema(
     {
@@ -57,12 +70,25 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up Light Manager Air from a config entry."""
 
     hass.data.setdefault(DOMAIN, {})
+    hass.data[DOMAIN].setdefault("entries", set()).add(entry.entry_id)
 
     lm_coordinator = LightManagerAirCoordinator(hass, entry)
     await lm_coordinator.async_setup()
     await lm_coordinator.async_config_entry_first_refresh()
     
     hass.data[DOMAIN][entry.entry_id] = lm_coordinator
+
+    async def _async_handle_reload_service(call):
+        target_entry_id = call.data.get(ATTR_ENTRY_ID, entry.entry_id)
+        await hass.config_entries.async_reload(target_entry_id)
+
+    if not hass.services.has_service(DOMAIN, SERVICE_RELOAD_FIXTURES):
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_RELOAD_FIXTURES,
+            _async_handle_reload_service,
+            schema=RELOAD_FIXTURES_SERVICE_SCHEMA,
+        )
 
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
@@ -73,5 +99,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
+        entries = hass.data[DOMAIN].get("entries", set())
+        entries.discard(entry.entry_id)
 
-    return unload_ok 
+        if not entries and hass.services.has_service(DOMAIN, SERVICE_RELOAD_FIXTURES):
+            hass.services.async_remove(DOMAIN, SERVICE_RELOAD_FIXTURES)
+
+    return unload_ok

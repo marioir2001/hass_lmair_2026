@@ -169,6 +169,10 @@ class Priority(Enum):
 
 MINIMUM_FIRMWARE_VERSION = "11.1"
 
+# Services
+SERVICE_RELOAD_FIXTURES = "reload_fixtures"
+ATTR_ENTRY_ID = "entry_id"
+
 # Storage constants
 STORAGE_VERSION = 1
 STORAGE_KEY_COVER_POSITIONS = "cover_positions"

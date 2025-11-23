@@ -67,6 +67,17 @@ It is crucial that each combination of zone and actuator name in the Light Manag
 
 ---
 
+## Reloading devices and scenes after changes
+
+When you add or rename zones, actuators, or scenes in the Light Manager Air, Home Assistant needs a reload to pick them up. The integration now exposes a service for this:
+
+- Call service `light_manager_air.reload_fixtures` (optional data: `entry_id` if you have multiple instances) to refresh devices and entities from the Light Manager.
+- Alternatively, go to **Settings → Devices & Services → Light Manager Air → Reload** in the UI.
+
+The service performs a full config-entry reload, so entity IDs stay stable but new devices/scenes become available without reinstalling the integration.
+
+---
+
 ## Configuration
 
 ### Polling Settings

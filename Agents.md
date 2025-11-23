@@ -1,6 +1,6 @@
 # Light Manager Air Integration Guidelines
 
-> This file must stay **in sync** with `Agents.md`. Whenever you change one, mirror the same change in the other so both tools continue to work correctly.
+> This file must stay **in sync** with `CLAUDE.md`. Whenever you change one, mirror the same change in the other so both tools continue to work correctly.
 
 ## Commit Guidelines
 

@@ -153,7 +153,7 @@ class LightManagerAirCoordinator(DataUpdateCoordinator):
             raise ConfigEntryNotReady(e)
 
         self.zones, self.scenes = await self.hass.async_add_executor_job(
-            self.light_manager.load_fixtures
+            self.light_manager.load_fixtures, True
         )
 
         device_registry = dr.async_get(self.hass)

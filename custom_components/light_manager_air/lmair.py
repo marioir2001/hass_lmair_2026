@@ -538,12 +538,13 @@ class LMAir(_LMFixture):
         """
         return self._connector.receive_radio_signals(timeout)
 
-    def load_fixtures(self) -> (List[LMZone], List[LMCommand]):
+    def load_fixtures(self, force_reload: bool = False) -> (List[LMZone], List[LMCommand]):
         """Loads all fixtures (zones, actuators, and scenes).
 
+        :param force_reload: If true, reloads config.xml from device even when cached.
         :return: Tuple with list of zones and list of scenes.
         """
-        if not self._config:
+        if force_reload or not self._config:
             self._config = self._connector.load_config()
 
         zones = [LMZone(zone, self._connector) for zone in self._config.findall("./zone")]
