@@ -124,7 +124,7 @@ class _LMConnector:
         if self._username or self._password:
             auth = (self._username, self._password)
 
-        timeout = 3 or (timeout or _LMConnector.DEFAULT_TIMEOUT) / 1000
+        timeout = (timeout or _LMConnector.DEFAULT_TIMEOUT) / 1000
 
         try:
             if not cmd:
@@ -282,6 +282,8 @@ class LMCommand(_LMFixture):
             cmd_dict = {self._cmd[0]: self._cmd[1]}
         else:
             cmd_dict = dict(self._cmd)
+
+        _LOGGER.debug("LMCommand '%s': sending %s", self._name, cmd_dict)
         
         self._connector.send("/control", cmd=cmd_dict, retry=True)
 

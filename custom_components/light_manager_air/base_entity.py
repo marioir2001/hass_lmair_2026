@@ -102,30 +102,76 @@ class LightManagerAirBaseEntity(ABC):
             self._update_marker_state()
             self.async_write_ha_state()
 
-    async def _async_call_command(self,
-                                  hass: HomeAssistant,
-                                  command_name: Optional[str] = None,
-                                  command_index: Optional[int] = None
-                                  ) -> None:
-        """Call a command by its name or index."""
-        if command_index is not None:
-            try:
-                await hass.async_add_executor_job(
-                    self._command_container.commands[command_index].call
-                )
-            except (IndexError, ConnectionError) as e:
-                raise HomeAssistantError(e)
+    async def _async_call_command(
+        self,
+        hass: HomeAssistant,
+        command_name: Optional[str] = None,
+        command_index: Optional[int] = None,
+    ) -> None:
+        """Call a command by name first, then fall back to index or legacy substring match.
 
+        Prefer exact name matches to avoid relying on command ordering (ON/OFF/TOGGLE
+        lists are not guaranteed to be stable)."""
+
+        commands = self._command_container.commands
+
+        def _log_target(cmd, idx):
+            _LOGGER.debug(
+                "Sending command for %s (%s): name='%s' index=%s payload=%s",
+                getattr(self, "entity_id", "<unknown>"),
+                self._command_container.name,
+                cmd.name,
+                idx,
+                cmd.cmd,
+            )
+
+        # 1) Exact name match (case-insensitive)
         if command_name:
-            for cmd in self._command_container.commands:
-                if command_name in cmd.name.lower():
+            for idx, cmd in enumerate(commands):
+                if cmd.name and cmd.name.lower() == command_name.lower():
                     try:
+                        _log_target(cmd, idx)
                         await hass.async_add_executor_job(cmd.call)
-                        break
+                        await self._coordinator.async_refresh()
+                        return
                     except ConnectionError as e:
                         raise HomeAssistantError(e)
 
-        await self._coordinator.async_refresh()
+        # 2) Indexed fallback (keeps backward compatibility)
+        if command_index is not None:
+            try:
+                cmd = commands[command_index]
+                _log_target(cmd, command_index)
+                await hass.async_add_executor_job(cmd.call)
+                await self._coordinator.async_refresh()
+                return
+            except IndexError as e:
+                # Keep going; we will raise a clearer error below if nothing matches
+                index_error = e
+            except ConnectionError as e:
+                raise HomeAssistantError(e)
+        else:
+            index_error = None
+
+        # 3) Legacy substring match (previous behavior)
+        if command_name:
+            for idx, cmd in enumerate(commands):
+                if command_name in cmd.name.lower():
+                    try:
+                        _log_target(cmd, idx)
+                        await hass.async_add_executor_job(cmd.call)
+                        await self._coordinator.async_refresh()
+                        return
+                    except ConnectionError as e:
+                        raise HomeAssistantError(e)
+
+        # Nothing matched – raise the most helpful error we have
+        if command_name:
+            if command_index is not None and index_error:
+                raise HomeAssistantError(index_error)
+            raise HomeAssistantError(f"Command '{command_name}' not found for {self._command_container.name}")
+        if command_index is not None and index_error:
+            raise HomeAssistantError(index_error)
 
 
 class ToggleCommandMixin:
@@ -137,12 +183,12 @@ class ToggleCommandMixin:
 
     async def async_turn_on(self, **kwargs):
         """Turn the entity on."""
-        await self._async_call_command(self.hass, command_index=self.COMMAND_ON)
+        await self._async_call_command(self.hass, command_name="on", command_index=self.COMMAND_ON)
 
     async def async_turn_off(self, **kwargs):
         """Turn the entity off."""
-        await self._async_call_command(self.hass, command_index=self.COMMAND_OFF)
+        await self._async_call_command(self.hass, command_name="off", command_index=self.COMMAND_OFF)
 
     async def async_toggle(self, **kwargs):
         """Toggle the entity."""
-        await self._async_call_command(self.hass, command_index=self.COMMAND_TOGGLE)
+        await self._async_call_command(self.hass, command_name="toggle", command_index=self.COMMAND_TOGGLE)
