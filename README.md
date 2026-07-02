@@ -5,6 +5,12 @@
 
 A Home Assistant custom integration for the jbmedia's Light Manager Air.
 
+Originalprojekt:
+https://github.com/kmifka/hass_lmair
+
+Weiterentwicklung:
+MarioIR2001
+
 ## Key Features
 
 - **Automatic device discovery** on your local network
