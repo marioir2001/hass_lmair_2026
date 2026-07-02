@@ -1,6 +1,6 @@
 {
   "domain": "light_manager_air",
-  "name": "Light Manager Air",
+  "name": "Light Manager Air 2026",
   "version": "1.3.0-beta.3",
   "integration_type": "hub",
   "config_flow": true,
