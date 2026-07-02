@@ -1,0 +1,80 @@
+reload_fixtures:
+  name: Reload fixtures
+  description: Reload the Light Manager Air configuration from the device.
+  fields:
+    entry_id:
+      name: Entry ID
+      description: Optional config entry ID. Leave empty when only one Light Manager Air is configured.
+      required: false
+      selector:
+        text:
+
+send_command:
+  name: Send command
+  description: Send a configured actuator command by zone, actuator and command name or index.
+  fields:
+    entry_id:
+      name: Entry ID
+      required: false
+      selector:
+        text:
+    zone:
+      name: Zone
+      required: true
+      selector:
+        text:
+    actuator:
+      name: Actuator
+      required: true
+      selector:
+        text:
+    command:
+      name: Command name
+      required: false
+      selector:
+        text:
+    command_index:
+      name: Command index
+      description: Zero-based fallback index when no command name is supplied.
+      required: false
+      selector:
+        number:
+          min: 0
+          mode: box
+
+send_raw_command:
+  name: Send raw command
+  description: Send a raw Light Manager Air /control cmd payload.
+  fields:
+    entry_id:
+      name: Entry ID
+      required: false
+      selector:
+        text:
+    payload:
+      name: Payload
+      description: Example typ,it,did,0996,aid,215,acmd,0,seq,6
+      required: true
+      selector:
+        text:
+
+start_radio_learning:
+  name: Start radio learning
+  description: Wait for the next received Light Manager Air radio signal and show it as a notification.
+  fields:
+    entry_id:
+      name: Entry ID
+      required: false
+      selector:
+        text:
+    timeout:
+      name: Timeout
+      description: Seconds to wait for a radio signal.
+      required: false
+      default: 30
+      selector:
+        number:
+          min: 5
+          max: 300
+          unit_of_measurement: s
+          mode: slider
