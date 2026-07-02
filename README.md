@@ -19,6 +19,12 @@ MarioIR2001
   - **Markers**
   - **Scenes**
 - **Radio reception**: Receive 433 MHz and 868 MHz radio signals
+- **Last Radio Signal sensor**
+    -   Protocol detection
+    -   Raw code
+    -   Repeat counter
+    -   Signal history (last 20 signals)
+- **Radio Learning Mode**
 - **Marker status updates**: Read an control markers as a switch in Home Assistant
 - **Weather data**: Integration of connected weather channels
 - **Cover Positioning**: Configure covers to display and set their current position based on opening and closing times.
@@ -49,7 +55,7 @@ This integration bridges jb media's Light Manager Air with Home Assistant, unloc
    - Click the **three dots menu** in the top-right corner and select **Custom repositories**.
    - Add the following repository URL:
      ```
-     https://github.com/kmifka/hass_lmair
+     https://github.com/marioir2001/hass_lmair_2026
      ```
    - Select **Integration** as the category.
    - Click **Add**.
