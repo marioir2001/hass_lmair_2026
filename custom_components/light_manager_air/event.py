@@ -41,8 +41,10 @@ class LightManagerAirRadioEvent(EventEntity):
     def __init__(self, coordinator: LightManagerAirCoordinator) -> None:
         """Initialize the event."""
         self._coordinator = coordinator
-        self._attr_device_id = coordinator.device_id
         self._attr_unique_id = f"{coordinator.device_id}_radio_event"
+        # Attach the radio event entity to the main Light Manager Air device.
+        # _attr_device_id is not enough for registry grouping; device_info is.
+        self._attr_device_info = coordinator.device_info
         self._signal_data = None
 
     async def async_added_to_hass(self) -> None:
@@ -54,9 +56,15 @@ class LightManagerAirRadioEvent(EventEntity):
 
     @property
     def state(self) -> str | None:
-        """Return the state of the entity."""
+        """Return the last radio code as state for easier debugging in developer tools."""
         if self._signal_data:
             return self._signal_data.get("code")
+        return None
+
+    @property
+    def extra_state_attributes(self) -> dict[str, Any]:
+        """Return the last radio signal data as attributes."""
+        return self._signal_data or {}
 
     @callback
     def _handle_event(self, event) -> None:
