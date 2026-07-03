@@ -54,7 +54,7 @@ This integration bridges jb media's Light Manager Air with Home Assistant, unloc
    - Click the **three dots menu** in the top-right corner and select **Custom repositories**.
    - Add the following repository URL:
      ```
-     https://github.com/kmifka/hass_lmair
+     https://github.com/marioir2001/hass_lmair_2026
      ```
    - Select **Integration** as the category.
    - Click **Add**.
