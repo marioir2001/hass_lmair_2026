@@ -178,7 +178,7 @@ class LightManagerAirOptionsFlow(config_entries.OptionsFlow):
 
     def __init__(self, config_entry: config_entries.ConfigEntry) -> None:
         """Initialize options flow."""
-        self.config_entry = config_entry
+        self._config_entry = config_entry
 
     async def async_step_init(
         self, user_input: dict[str, Any] | None = None
@@ -190,16 +190,16 @@ class LightManagerAirOptionsFlow(config_entries.OptionsFlow):
                 return self.async_create_entry(title="", data=user_input)
 
             # Get current options with defaults
-            current_radio_bus = self.config_entry.options.get(CONF_ENABLE_RADIO_BUS, True)
-            current_radio_interval = self.config_entry.options.get(
+            current_radio_bus = self._config_entry.options.get(CONF_ENABLE_RADIO_BUS, True)
+            current_radio_interval = self._config_entry.options.get(
                 CONF_RADIO_POLLING_INTERVAL, DEFAULT_RADIO_POLLING_INTERVAL
             )
-            current_marker_updates = self.config_entry.options.get(CONF_ENABLE_MARKER_UPDATES, True)
-            current_marker_interval = self.config_entry.options.get(
+            current_marker_updates = self._config_entry.options.get(CONF_ENABLE_MARKER_UPDATES, True)
+            current_marker_interval = self._config_entry.options.get(
                 CONF_MARKER_UPDATE_INTERVAL, DEFAULT_MARKER_UPDATE_INTERVAL
             )
-            current_weather_updates = self.config_entry.options.get(CONF_ENABLE_WEATHER_UPDATES, True)
-            current_weather_interval = self.config_entry.options.get(
+            current_weather_updates = self._config_entry.options.get(CONF_ENABLE_WEATHER_UPDATES, True)
+            current_weather_interval = self._config_entry.options.get(
                 CONF_WEATHER_UPDATE_INTERVAL, DEFAULT_WEATHER_UPDATE_INTERVAL
             )
             

@@ -540,6 +540,15 @@ class LMAir(_LMFixture):
         """
         return self._connector.receive_radio_signals(timeout)
 
+    def send_raw_command(self, payload: str) -> None:
+        """Send a raw /control command payload to the Light Manager Air.
+
+        The payload is the value of the ``cmd`` field, for example
+        ``typ,it,did,0996,aid,215,acmd,0,seq,6``.
+        """
+        command = LMCommand(self._connector, name="raw", cmd=payload)
+        command.call()
+
     def load_fixtures(self, force_reload: bool = False) -> (List[LMZone], List[LMCommand]):
         """Loads all fixtures (zones, actuators, and scenes).
 
