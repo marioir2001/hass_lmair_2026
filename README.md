@@ -1,9 +1,14 @@
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/kmifka/hass_lmair)](https://github.com/kmifka/hass_lmair/releases/latest)
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=flat&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/kmifka)
 
 # Light Manager Air Integration for Home Assistant
 
 A Home Assistant custom integration for the jbmedia's Light Manager Air.
+
+# Credits
+
+Original project: https://github.com/kmifka/hass_lmair
+
+Maintained and extended by: MarioIR2001
 
 ## Key Features
 
@@ -13,6 +18,11 @@ A Home Assistant custom integration for the jbmedia's Light Manager Air.
   - **Blinds/Covers**
   - **Markers**
   - **Scenes**
+-  **Last Radio Signal sensor**
+    -   Protocol detection
+    -   Raw code
+    -   Repeat counter
+    -   Signal history (last 20 signals)
 - **Radio reception**: Receive 433 MHz and 868 MHz radio signals
 - **Marker status updates**: Read an control markers as a switch in Home Assistant
 - **Weather data**: Integration of connected weather channels
