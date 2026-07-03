@@ -1,7 +1,5 @@
 """Light platform for Light Manager Air."""
 import logging
-import re
-
 from homeassistant.components.light import (
     LightEntity,
     ColorMode,
@@ -16,6 +14,7 @@ from .base_entity import LightManagerAirBaseEntity, ToggleCommandMixin
 from .const import DOMAIN, CONF_ENTITY_CONVERSIONS, CONF_TARGET_TYPE, CONF_ZONE_NAME, CONF_ACTUATOR_NAME
 from .coordinator import LightManagerAirCoordinator
 from .cover import LightManagerAirCover
+from .entity_utils import is_dimmable_actuator, is_hue_actuator, has_only_basic_toggle_commands
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -56,19 +55,24 @@ class LightManagerAirLight(LightManagerAirBaseEntity, ToggleCommandMixin, LightE
         if LightManagerAirCover.check_actuator(actuator, zone_name, hass):
             return False
 
-        # check for Philips Hue
-        if actuator.commands and len(actuator.commands) > 0:
-            first_cmd = actuator.commands[0].cmd
-            light_pattern = r'/api/[^/]+/(?:lights|groups)/\d+/(?:state|action)'
-            if re.search(light_pattern, first_cmd[0][1]):
-                return True
+        # Philips Hue HTTP commands are lights even though their actuator type is "http".
+        if is_hue_actuator(actuator):
+            return True
 
-        return actuator.type != "ipcam"
+        # Simple on/off/toggle actuators are better represented as SwitchEntity.
+        if has_only_basic_toggle_commands(actuator):
+            return False
+
+        # Dimmable actuators stay in the light domain.
+        if is_dimmable_actuator(actuator):
+            return True
+
+        return actuator.type not in ("ipcam", "http")
 
     @staticmethod
     def _check_dimmable(actuator):
         """Check if light is dimmable."""
-        return actuator.type != "http" and any("%" in cmd.name for cmd in actuator.commands)
+        return is_dimmable_actuator(actuator)
 
     @staticmethod
     def _get_closest_brightness_command(actuator, brightness_pct):
@@ -103,8 +107,12 @@ class LightManagerAirLight(LightManagerAirBaseEntity, ToggleCommandMixin, LightE
             zone_name=zone.name
         )
         self._actuator = actuator
-        self._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
-        self._attr_color_mode = ColorMode.BRIGHTNESS
+        if self._check_dimmable(actuator):
+            self._attr_supported_color_modes = {ColorMode.BRIGHTNESS}
+            self._attr_color_mode = ColorMode.BRIGHTNESS
+        else:
+            self._attr_supported_color_modes = {ColorMode.ONOFF}
+            self._attr_color_mode = ColorMode.ONOFF
 
     async def async_turn_on(self, **kwargs):
         """Turn the light on."""

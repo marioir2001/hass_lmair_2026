@@ -1,9 +1,14 @@
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/kmifka/hass_lmair)](https://github.com/kmifka/hass_lmair/releases/latest)
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20a%20Coffee-FFDD00?style=flat&logo=buy-me-a-coffee&logoColor=black)](https://buymeacoffee.com/kmifka)
 
 # Light Manager Air Integration for Home Assistant
 
 A Home Assistant custom integration for the jbmedia's Light Manager Air.
+
+# Credits
+
+Original project: https://github.com/kmifka/hass_lmair
+
+Maintained and extended by: MarioIR2001
 
 ## Key Features
 
@@ -13,6 +18,11 @@ A Home Assistant custom integration for the jbmedia's Light Manager Air.
   - **Blinds/Covers**
   - **Markers**
   - **Scenes**
+-  **Last Radio Signal sensor**
+    -   Protocol detection
+    -   Raw code
+    -   Repeat counter
+    -   Signal history (last 20 signals)
 - **Radio reception**: Receive 433 MHz and 868 MHz radio signals
 - **Marker status updates**: Read an control markers as a switch in Home Assistant
 - **Weather data**: Integration of connected weather channels
@@ -44,7 +54,7 @@ This integration bridges jb media's Light Manager Air with Home Assistant, unloc
    - Click the **three dots menu** in the top-right corner and select **Custom repositories**.
    - Add the following repository URL:
      ```
-     https://github.com/kmifka/hass_lmair
+     https://github.com/marioir2001/hass_lmair_2026
      ```
    - Select **Integration** as the category.
    - Click **Add**.
@@ -107,6 +117,63 @@ triggers:
     event_data:
       code: rfit_14734E8A
 ```
+
+### Last Radio Signal Sensor
+
+Entity:
+
+sensor.last_radio_signal
+
+State example:
+
+rffs_E3C20100
+
+Attributes:
+
+-   code
+-   protocol
+-   raw_code
+-   received_at
+-   last_received
+-   signal_count
+-   repeat_count
+-   history
+
+Example:
+
+    code: rffs_E3C20100
+    protocol: RFFS
+    raw_code: E3C20100
+    received_at: "2026-07-02T12:28:08"
+    last_received: "2026-07-02 12:28:08"
+    signal_count: 42
+    repeat_count: 3
+    history:
+      - "2026-07-02 12:28:08 | rffs_E3C20100"
+      - "2026-07-02 12:27:59 | rffs_E3C20100"
+      - "2026-07-02 12:27:41 | rffs_270B0412"
+
+### Radio Learning Mode
+
+Start via service:
+
+light_manager_air.start_radio_learning
+
+or with the Learn Radio Signal button.
+
+The integration waits for the next received signal and fires:
+
+light_manager_air_radio_signal_learned
+
+Example event:
+
+    code: rffs_E3C20100
+    protocol: RFFS
+    raw_code: E3C20100
+
+The normal event.radio_signal and sensor.last_radio_signal continue to
+work.
+
 
 ### Cover Timings
 
