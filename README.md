@@ -238,3 +238,16 @@ light_manager_air:
       actuator_name: "Ceiling Light"
       target_type: "switch"
 ```
+## Changelog
+
+### 1.3.0-beta.3
+
+- Added Last Radio Signal sensor
+- Added signal history
+- Added repeat counter
+- Added signal counter
+- Added Learn Radio Signal service
+- Added Learn Radio Signal button
+- Added Reload Fixtures service
+- Marker entities moved into a dedicated device
+- Various bug fixes
