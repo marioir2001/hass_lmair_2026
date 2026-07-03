@@ -118,7 +118,7 @@ triggers:
       code: rfit_14734E8A
 ```
 
-# Last Radio Signal Sensor
+### Last Radio Signal Sensor
 
 Entity:
 
