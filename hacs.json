@@ -1,11 +1,5 @@
 {
   "name": "Light Manager Air",
   "render_readme": true,
-  "domain": "light_manager_air",
-  "documentation": "https://github.com/marioir2001/light_manager_air",
-  "issue_tracker": "https://github.com/marioir2001/light_manager_air/issues",
-  "dependencies": [],
-  "after_dependencies": [],
-  "codeowners": ["@marioir2001"],
   "homeassistant": "2026.3.0"
-} 
+}
