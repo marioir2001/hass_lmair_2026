@@ -118,6 +118,42 @@ triggers:
       code: rfit_14734E8A
 ```
 
+# Last Radio Signal Sensor
+
+Entity:
+
+sensor.last_radio_signal
+
+State example:
+
+rffs_E3C20100
+
+Attributes:
+
+-   code
+-   protocol
+-   raw_code
+-   received_at
+-   last_received
+-   signal_count
+-   repeat_count
+-   history
+
+Example:
+
+    code: rffs_E3C20100
+    protocol: RFFS
+    raw_code: E3C20100
+    received_at: "2026-07-02T12:28:08"
+    last_received: "2026-07-02 12:28:08"
+    signal_count: 42
+    repeat_count: 3
+    history:
+      - "2026-07-02 12:28:08 | rffs_E3C20100"
+      - "2026-07-02 12:27:59 | rffs_E3C20100"
+      - "2026-07-02 12:27:41 | rffs_270B0412"
+
+
 ### Cover Timings
 
 You can now configure covers to display their current position and set positions based on opening and closing times. To do this, add the following configuration to your `configuration.yaml` file:
