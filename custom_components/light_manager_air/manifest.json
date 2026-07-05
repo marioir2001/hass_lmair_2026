@@ -1,19 +1,16 @@
 {
   "domain": "light_manager_air",
   "name": "Light Manager Air",
-  "version": "1.3.0-beta3",
-  "integration_type": "hub",
-  "config_flow": true,
-  "iot_class": "local_polling",
-  "homeassistant": "2025.6.0",
-
-  "documentation": "https://github.com/marioir2001/hass_lmair_2026",
-  "issue_tracker": "https://github.com/marioir2001/hass_lmair_2026/issues",
-
   "codeowners": [
     "@marioir2001"
   ],
-
+  "config_flow": true,
   "dependencies": [],
-  "requirements": []
+  "documentation": "https://github.com/marioir2001/hass_lmair_2026",
+  "homeassistant": "2025.6.0",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/marioir2001/hass_lmair_2026/issues",
+  "requirements": [],
+  "version": "1.3.0b8"
 }
