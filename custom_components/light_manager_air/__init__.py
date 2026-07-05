@@ -26,12 +26,14 @@ from .const import (
     SERVICE_SEND_COMMAND,
     SERVICE_SEND_RAW_COMMAND,
     SERVICE_START_RADIO_LEARNING,
+    SERVICE_SHOW_RADIO_AUTOMATION_YAML,
     ATTR_ZONE,
     ATTR_ACTUATOR,
     ATTR_COMMAND,
     ATTR_COMMAND_INDEX,
     ATTR_PAYLOAD,
     ATTR_TIMEOUT,
+    ATTR_CODE,
 )
 from .coordinator import LightManagerAirCoordinator, RADIO_SIGNAL_EVENT
 
@@ -69,6 +71,67 @@ START_RADIO_LEARNING_SERVICE_SCHEMA = vol.Schema({
     vol.Optional(ATTR_ENTRY_ID): cv.string,
     vol.Optional(ATTR_TIMEOUT, default=30): vol.All(vol.Coerce(int), vol.Range(min=5, max=300)),
 })
+
+SHOW_RADIO_AUTOMATION_YAML_SERVICE_SCHEMA = vol.Schema({
+    vol.Optional(ATTR_CODE): cv.string,
+})
+
+
+def _parse_radio_code(code: str | None) -> tuple[str | None, str | None]:
+    """Split a Light Manager radio code into protocol and raw code parts."""
+    if not isinstance(code, str) or not code:
+        return None, None
+    if "_" not in code:
+        return None, code
+    protocol, raw_code = code.split("_", 1)
+    return protocol.upper(), raw_code
+
+
+def _automation_yaml_for_radio_code(code: str) -> str:
+    """Return a ready-to-copy automation YAML snippet for a radio code."""
+    safe_alias = str(code).replace('"', '\"')
+    return (
+        f'alias: Radio Signal {safe_alias}\n'
+        'description: "Triggered by a learned Light Manager Air radio signal"\n'
+        'triggers:\n'
+        '  - trigger: event\n'
+        '    event_type: radio_signal\n'
+        '    event_data:\n'
+        f'      code: {safe_alias}\n'
+        'conditions: []\n'
+        'actions: []\n'
+        'mode: single'
+    )
+
+
+def _create_radio_automation_notification(hass: HomeAssistant, code: str, protocol: str | None = None, raw_code: str | None = None) -> None:
+    """Create a persistent notification with ready-to-copy automation YAML."""
+    yaml = _automation_yaml_for_radio_code(code)
+    details = [
+        f"**Code:** `{code}`",
+    ]
+    if protocol:
+        details.append(f"**Protokoll:** `{protocol}`")
+    if raw_code:
+        details.append(f"**Rohcode:** `{raw_code}`")
+
+    details.append(
+        "**Automation YAML:**\n\n"
+        "```yaml\n"
+        f"{yaml}\n"
+        "```"
+    )
+    details.append(
+        "Öffne **Einstellungen → Automationen & Szenen → Automation erstellen** "
+        "und füge das YAML als neue Automation ein."
+    )
+
+    persistent_notification.async_create(
+        hass,
+        "\n\n".join(details),
+        title="Light Manager Air Automation YAML",
+        notification_id="light_manager_air_radio_automation_yaml",
+    )
 
 CONFIG_SCHEMA = vol.Schema(
     {
@@ -154,16 +217,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         if not learn_state:
             return
         code = event.data.get("code", "unknown")
-        protocol = None
-        raw_code = None
-        if isinstance(code, str) and "_" in code:
-            protocol, raw_code = code.split("_", 1)
+        protocol, raw_code = _parse_radio_code(code)
+        learned_data = {
+            "code": code,
+            "protocol": protocol,
+            "raw_code": raw_code,
+        }
+        hass.data[DOMAIN]["last_learned_radio_signal"] = learned_data
 
         details = [f"**Code:** `{code}`"]
         if protocol:
             details.append(f"**Protokoll:** `{protocol}`")
         if raw_code:
             details.append(f"**Rohcode:** `{raw_code}`")
+        details.append(
+            "Das fertige Automation-YAML wurde in einer zweiten Benachrichtigung erstellt. "
+            "Du kannst außerdem den Service `light_manager_air.show_radio_automation_yaml` nutzen."
+        )
 
         persistent_notification.async_create(
             hass,
@@ -171,11 +241,9 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             title="Light Manager Air Funksignal gelernt",
             notification_id="light_manager_air_radio_learning",
         )
-        hass.bus.async_fire(f"{DOMAIN}_radio_signal_learned", {
-            "code": code,
-            "protocol": protocol,
-            "raw_code": raw_code,
-        })
+        _create_radio_automation_notification(hass, code, protocol, raw_code)
+
+        hass.bus.async_fire(f"{DOMAIN}_radio_signal_learned", learned_data)
         _clear_radio_learning()
 
     async def _async_handle_start_radio_learning_service(call):
@@ -196,6 +264,23 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if not hass.data[DOMAIN].get("radio_learning_listener_registered"):
         hass.bus.async_listen(RADIO_SIGNAL_EVENT, _async_radio_learning_event)
         hass.data[DOMAIN]["radio_learning_listener_registered"] = True
+
+    async def _async_handle_show_radio_automation_yaml_service(call):
+        code = call.data.get(ATTR_CODE)
+        protocol = None
+        raw_code = None
+        if not code:
+            learned_data = hass.data[DOMAIN].get("last_learned_radio_signal") or {}
+            code = learned_data.get("code")
+            protocol = learned_data.get("protocol")
+            raw_code = learned_data.get("raw_code")
+        else:
+            protocol, raw_code = _parse_radio_code(code)
+
+        if not code:
+            raise HomeAssistantError("No learned radio signal available yet")
+
+        _create_radio_automation_notification(hass, code, protocol, raw_code)
 
     async def _async_handle_send_command_service(call):
         coordinator = _get_service_coordinator(call.data.get(ATTR_ENTRY_ID))
@@ -272,6 +357,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             schema=START_RADIO_LEARNING_SERVICE_SCHEMA,
         )
 
+    if not hass.services.has_service(DOMAIN, SERVICE_SHOW_RADIO_AUTOMATION_YAML):
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_SHOW_RADIO_AUTOMATION_YAML,
+            _async_handle_show_radio_automation_yaml_service,
+            schema=SHOW_RADIO_AUTOMATION_YAML_SERVICE_SCHEMA,
+        )
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
@@ -285,7 +378,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entries.discard(entry.entry_id)
 
         if not entries:
-            for service in (SERVICE_RELOAD_FIXTURES, SERVICE_SEND_COMMAND, SERVICE_SEND_RAW_COMMAND, SERVICE_START_RADIO_LEARNING):
+            for service in (SERVICE_RELOAD_FIXTURES, SERVICE_SEND_COMMAND, SERVICE_SEND_RAW_COMMAND, SERVICE_START_RADIO_LEARNING, SERVICE_SHOW_RADIO_AUTOMATION_YAML):
                 if hass.services.has_service(DOMAIN, service):
                     hass.services.async_remove(DOMAIN, service)
 
