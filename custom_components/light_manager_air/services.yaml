@@ -78,3 +78,15 @@ start_radio_learning:
           max: 300
           unit_of_measurement: s
           mode: slider
+
+
+show_radio_automation_yaml:
+  name: Show radio automation YAML
+  description: Create a persistent notification with ready-to-copy automation YAML for the last learned or supplied radio code.
+  fields:
+    code:
+      name: Radio code
+      description: Optional radio code. If omitted, the last learned radio signal is used.
+      required: false
+      selector:
+        text:

@@ -174,6 +174,7 @@ SERVICE_RELOAD_FIXTURES = "reload_fixtures"
 SERVICE_SEND_COMMAND = "send_command"
 SERVICE_SEND_RAW_COMMAND = "send_raw_command"
 SERVICE_START_RADIO_LEARNING = "start_radio_learning"
+SERVICE_SHOW_RADIO_AUTOMATION_YAML = "show_radio_automation_yaml"
 ATTR_ENTRY_ID = "entry_id"
 ATTR_ZONE = "zone"
 ATTR_ACTUATOR = "actuator"
@@ -181,6 +182,7 @@ ATTR_COMMAND = "command"
 ATTR_COMMAND_INDEX = "command_index"
 ATTR_PAYLOAD = "payload"
 ATTR_TIMEOUT = "timeout"
+ATTR_CODE = "code"
 
 # Storage constants
 STORAGE_VERSION = 1

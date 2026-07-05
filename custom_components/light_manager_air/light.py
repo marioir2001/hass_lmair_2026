@@ -14,7 +14,7 @@ from .base_entity import LightManagerAirBaseEntity, ToggleCommandMixin
 from .const import DOMAIN, CONF_ENTITY_CONVERSIONS, CONF_TARGET_TYPE, CONF_ZONE_NAME, CONF_ACTUATOR_NAME
 from .coordinator import LightManagerAirCoordinator
 from .cover import LightManagerAirCover
-from .entity_utils import is_dimmable_actuator, is_hue_actuator, has_only_basic_toggle_commands
+from .entity_utils import is_dimmable_actuator, is_hue_actuator, has_only_basic_toggle_commands, is_single_action_actuator
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -61,6 +61,10 @@ class LightManagerAirLight(LightManagerAirBaseEntity, ToggleCommandMixin, LightE
 
         # Simple on/off/toggle actuators are better represented as SwitchEntity.
         if has_only_basic_toggle_commands(actuator):
+            return False
+
+        # One-shot command actuators are stateless actions and are exposed as buttons.
+        if is_single_action_actuator(actuator):
             return False
 
         # Dimmable actuators stay in the light domain.

@@ -4,13 +4,12 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-import homeassistant
 from homeassistant.components.event import (
     EventEntity,
     EventDeviceClass,
 )
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.core import HomeAssistant, callback, Context
+from homeassistant.core import HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
 from .const import DOMAIN
@@ -54,12 +53,6 @@ class LightManagerAirRadioEvent(EventEntity):
             self._handle_event
         )
 
-    @property
-    def state(self) -> str | None:
-        """Return the last radio code as state for easier debugging in developer tools."""
-        if self._signal_data:
-            return self._signal_data.get("code")
-        return None
 
     @property
     def extra_state_attributes(self) -> dict[str, Any]:
@@ -72,7 +65,7 @@ class LightManagerAirRadioEvent(EventEntity):
         self._signal_data = event.data
 
         self._trigger_event(
-            RADIO_SIGNAL_EVENT,
+            "radio_signal",
             self._signal_data
         )
 
