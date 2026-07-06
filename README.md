@@ -105,6 +105,26 @@ It is crucial that each combination of zone and actuator name in the Light Manag
 
 ---
 
+## Configuration
+
+### Polling Settings
+
+The Light Manager Air relies on polling for updates because it does not support event-based communication. This integration allows you to adjust the polling intervals for:
+
+1. **Marker Updates**: Updates the status of markers (Default: `5000 ms`).
+2. **Radio Signals**: Checks for 433 MHz and 868 MHz signals (Default: `2000 ms`).
+3. **Weather Updates**: Retrieves weather data from connected weather stations (Default: `300000 ms`).
+
+You can customize these intervals to suit your needs or disable polling entirely if not required:
+
+1. Navigate to **Settings** → **Devices & Services**.
+2. Locate the Light Manager Air integration and click **Options**.
+3. Set your desired intervals or disable polling by uncheck the checkbox.
+
+⚠️ **Warning**: Short intervals improve response times but may impact performance. Use default settings as a starting point and adjust based on your system's capabilities.
+
+---
+
 ## 🔄 Synchronizing the Light Manager Air Configuration
 
 Whenever you make changes in AirStudio (for example adding, renaming or removing zones, actuators or scenes), Home Assistant can synchronize its configuration with the current Light Manager Air configuration.
@@ -138,23 +158,6 @@ After the synchronization has finished, a notification summarizes the result.
 
 > **Note:** The Light Manager Air does not automatically notify Home Assistant when its configuration changes. Therefore, synchronization must be started manually after making changes in AirStudio.
 
-## Configuration
-
-### Polling Settings
-
-The Light Manager Air relies on polling for updates because it does not support event-based communication. This integration allows you to adjust the polling intervals for:
-
-1. **Marker Updates**: Updates the status of markers (Default: `5000 ms`).
-2. **Radio Signals**: Checks for 433 MHz and 868 MHz signals (Default: `2000 ms`).
-3. **Weather Updates**: Retrieves weather data from connected weather stations (Default: `300000 ms`).
-
-You can customize these intervals to suit your needs or disable polling entirely if not required:
-
-1. Navigate to **Settings** → **Devices & Services**.
-2. Locate the Light Manager Air integration and click **Options**.
-3. Set your desired intervals or disable polling by uncheck the checkbox.
-
-⚠️ **Warning**: Short intervals improve response times but may impact performance. Use default settings as a starting point and adjust based on your system's capabilities.
 
 ## 📡 Radio Learning & Automation
 
