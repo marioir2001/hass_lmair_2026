@@ -158,6 +158,7 @@ After the synchronization has finished, a notification summarizes the result.
 
 > **Note:** The Light Manager Air does not automatically notify Home Assistant when its configuration changes. Therefore, synchronization must be started manually after making changes in AirStudio.
 
+--- 
 
 ## 📡 Radio Learning & Automation
 
