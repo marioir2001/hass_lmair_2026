@@ -146,11 +146,31 @@ def _count_actuators(coordinator: LightManagerAirCoordinator) -> int:
     return sum(len(zone.actuators) for zone in coordinator.zones)
 
 
+def _format_sync_list(items: list[str] | tuple[str, ...] | None, limit: int = 10) -> list[str]:
+    """Return a compact markdown list for sync notification sections."""
+    values = [str(item) for item in (items or []) if item]
+    if not values:
+        return ["_Keine_"]
+    shown = values[:limit]
+    lines = [f"- `{item}`" for item in shown]
+    remaining = len(values) - len(shown)
+    if remaining > 0:
+        lines.append(f"- … und {remaining} weitere")
+    return lines
+
+
 def _sync_summary_message(coordinator: LightManagerAirCoordinator, sync_stats: dict | None = None) -> str:
     """Build a human-readable sync summary for persistent notifications."""
     sync_stats = sync_stats or {}
     host = coordinator.entry.data.get("host") or getattr(coordinator.light_manager, "host", None)
     online = "Online" if getattr(coordinator, "last_update_success", True) else "Offline"
+
+    added_devices = sync_stats.get("added_devices_list", [])
+    added_entities = sync_stats.get("added_entities_list", [])
+    removed_devices = sync_stats.get("removed_devices_list", [])
+    removed_entities = sync_stats.get("removed_entities_list", [])
+    changed = any((added_devices, added_entities, removed_devices, removed_entities))
+
     lines = [
         "Die aktuelle Konfiguration wurde vom Light Manager Air geladen.",
         "",
@@ -158,18 +178,36 @@ def _sync_summary_message(coordinator: LightManagerAirCoordinator, sync_stats: d
     ]
     if host:
         lines.append(f"**IP/Host:** `{host}`")
+
     lines.extend([
+        "",
+        "## Änderungen",
+    ])
+
+    if changed:
+        lines.extend(["", "### Neue Geräte/Zonen"])
+        lines.extend(_format_sync_list(added_devices))
+        lines.extend(["", "### Neue Entitäten"])
+        lines.extend(_format_sync_list(added_entities))
+        lines.extend(["", "### Entfernte Geräte/Zonen"])
+        lines.extend(_format_sync_list(removed_devices))
+        lines.extend(["", "### Entfernte Entitäten"])
+        lines.extend(_format_sync_list(removed_entities))
+    else:
+        lines.extend(["", "Keine Änderungen gefunden. Alle Geräte entsprechen der aktuellen AirStudio-Konfiguration."])
+
+    lines.extend([
+        "",
+        "## Gesamt",
         f"**Zonen:** {len(coordinator.zones)}",
         f"**Aktoren/Geräte:** {_count_actuators(coordinator)}",
         f"**Szenen:** {len(coordinator.scenes)}",
         f"**Marker:** {len(coordinator.markers)}",
         f"**Wetterkanäle:** {len(coordinator.weather_channels)}",
-        f"**Entfernte Entitäten:** {sync_stats.get('removed_entities', 0)}",
-        f"**Entfernte Geräte/Zonen:** {sync_stats.get('removed_devices', 0)}",
+        "",
+        "Synchronisation erfolgreich abgeschlossen.",
     ])
     return "\n".join(lines)
-
-
 
 def _write_xml_debug_files(base_path: str, xml_text: str) -> tuple[str, str, int]:
     """Write the Light Manager XML debug files and return paths and size."""
@@ -268,11 +306,29 @@ def _expected_entity_registry_keys(hass: HomeAssistant, coordinator: LightManage
     return expected
 
 
+def _entity_registry_keys_for_entry(hass: HomeAssistant, entry: ConfigEntry) -> set[tuple[str, str]]:
+    """Return current entity registry keys for this Light Manager Air entry."""
+    registry = er.async_get(hass)
+    return {
+        (entity_entry.domain, entity_entry.unique_id)
+        for entity_entry in registry.entities.values()
+        if entity_entry.config_entry_id == entry.entry_id
+        and entity_entry.platform == DOMAIN
+        and entity_entry.unique_id
+    }
+
+
+def _entity_label_from_key(key: tuple[str, str]) -> str:
+    """Return a readable label for an entity registry key."""
+    domain, unique_id = key
+    return f"{domain}: {unique_id}"
+
+
 async def _async_cleanup_removed_entities(
     hass: HomeAssistant,
     entry: ConfigEntry,
     coordinator: LightManagerAirCoordinator,
-) -> int:
+) -> list[str]:
     """Remove entity registry entries that no longer exist in the Light Manager XML.
 
     Home Assistant keeps old registry entries after an integration reload. Without
@@ -305,7 +361,44 @@ async def _async_cleanup_removed_entities(
             len(removed),
             ", ".join(removed),
         )
-    return len(removed)
+    return removed
+
+
+def _expected_zone_device_labels(hass: HomeAssistant, coordinator: LightManagerAirCoordinator) -> dict[str, set[tuple[str, str]]]:
+    """Return expected zone device labels and their supported identifiers."""
+    from .base_entity import LightManagerAirBaseEntity
+
+    labels: dict[str, set[tuple[str, str]]] = {}
+    for zone in coordinator.zones:
+        if LightManagerAirBaseEntity.is_zone_ignored(zone.name, hass):
+            continue
+        labels[zone.name] = {
+            (DOMAIN, f"{coordinator.light_manager.mac_address}_{zone.name}"),
+            (DOMAIN, f"{coordinator.device_id}_{zone.name}"),
+        }
+    return labels
+
+
+def _added_device_labels_for_entry(
+    hass: HomeAssistant,
+    entry: ConfigEntry,
+    coordinator: LightManagerAirCoordinator,
+) -> list[str]:
+    """Return expected zone devices that are not currently registered."""
+    device_registry = dr.async_get(hass)
+    existing_identifiers: set[tuple[str, str]] = set()
+    for device in device_registry.devices.values():
+        if entry.entry_id not in device.config_entries:
+            continue
+        existing_identifiers.update(
+            identifier for identifier in device.identifiers if identifier[0] == DOMAIN
+        )
+
+    added: list[str] = []
+    for label, identifiers in _expected_zone_device_labels(hass, coordinator).items():
+        if not (identifiers & existing_identifiers):
+            added.append(label)
+    return sorted(added, key=str.casefold)
 
 
 def _expected_device_identifiers(hass: HomeAssistant, coordinator: LightManagerAirCoordinator) -> set[tuple[str, str]]:
@@ -333,7 +426,7 @@ async def _async_cleanup_removed_devices(
     hass: HomeAssistant,
     entry: ConfigEntry,
     coordinator: LightManagerAirCoordinator,
-) -> int:
+) -> list[str]:
     """Remove empty device registry entries that no longer exist in the XML.
 
     Entity cleanup alone is not enough: Home Assistant may keep an empty device
@@ -375,7 +468,7 @@ async def _async_cleanup_removed_devices(
             len(removed),
             ", ".join(removed),
         )
-    return len(removed)
+    return removed
 
 CONFIG_SCHEMA = vol.Schema(
     {
@@ -425,12 +518,36 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     
     hass.data[DOMAIN][entry.entry_id] = lm_coordinator
 
+    existing_entity_keys = _entity_registry_keys_for_entry(hass, entry)
+    expected_entity_keys = _expected_entity_registry_keys(hass, lm_coordinator)
+    added_entities = sorted(
+        (_entity_label_from_key(key) for key in expected_entity_keys - existing_entity_keys),
+        key=str.casefold,
+    )
+    added_devices = _added_device_labels_for_entry(hass, entry, lm_coordinator)
+
     removed_entities = await _async_cleanup_removed_entities(hass, entry, lm_coordinator)
     removed_devices = await _async_cleanup_removed_devices(hass, entry, lm_coordinator)
-    hass.data[DOMAIN].setdefault("last_sync_stats", {})[entry.entry_id] = {
-        "removed_entities": removed_entities,
-        "removed_devices": removed_devices,
+    sync_stats = {
+        "added_entities": len(added_entities),
+        "added_entities_list": added_entities,
+        "added_devices": len(added_devices),
+        "added_devices_list": added_devices,
+        "removed_entities": len(removed_entities),
+        "removed_entities_list": removed_entities,
+        "removed_devices": len(removed_devices),
+        "removed_devices_list": removed_devices,
     }
+    hass.data[DOMAIN].setdefault("last_sync_stats", {})[entry.entry_id] = sync_stats
+
+    if any(sync_stats[key] for key in ("added_entities", "added_devices", "removed_entities", "removed_devices")):
+        _LOGGER.info(
+            "Light Manager Air sync changes: added_devices=%s; added_entities=%s; removed_devices=%s; removed_entities=%s",
+            ", ".join(added_devices) or "none",
+            ", ".join(added_entities) or "none",
+            ", ".join(removed_devices) or "none",
+            ", ".join(removed_entities) or "none",
+        )
 
     def _get_service_coordinator(target_entry_id: str | None):
         target_entry_id = target_entry_id or entry.entry_id
