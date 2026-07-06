@@ -1,4 +1,4 @@
-[![GitHub release](https://img.shields.io/github/v/release/marioir2001/hass_lmair_2026)]
+![GitHub release](https://img.shields.io/github/v/release/marioir2001/hass_lmair_2026)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.6+-41BDF5.svg)
 ![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)
 
