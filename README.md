@@ -23,6 +23,25 @@ New features include:
 - Last Radio Signal Sensor
 - Localization
 
+## 🚀 Why this fork?
+
+This project is an actively maintained fork of the original Light Manager Air integration.
+
+Compared to the original project, it provides many additional features, including:
+
+- Smart Synchronization
+- Automatic Cleanup
+- XML Export
+- Diagnostics
+- Radio Learning
+- Last Radio Signal Sensor
+- Automation YAML Generator
+- Localization (German / English)
+
+The goal is to continuously improve the integration while keeping full compatibility with the JBMedia Light Manager Air.
+
+---
+
 ## ✨ Features
 
 ### Device Support
