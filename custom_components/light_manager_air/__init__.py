@@ -319,9 +319,98 @@ def _entity_registry_keys_for_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
 
 
 def _entity_label_from_key(key: tuple[str, str]) -> str:
-    """Return a readable label for an entity registry key."""
+    """Return a fallback label for an entity registry key."""
     domain, unique_id = key
     return f"{domain}: {unique_id}"
+
+
+def _entity_entry_label(entity_entry) -> str:
+    """Return the best user-facing label for an entity registry entry."""
+    return (
+        getattr(entity_entry, "name", None)
+        or getattr(entity_entry, "original_name", None)
+        or getattr(entity_entry, "entity_id", None)
+        or getattr(entity_entry, "unique_id", None)
+        or "Unknown entity"
+    )
+
+
+def _expected_entity_labels(hass: HomeAssistant, coordinator: LightManagerAirCoordinator) -> dict[tuple[str, str], str]:
+    """Build user-facing labels for expected entities from the current XML/config."""
+    from .base_entity import LightManagerAirBaseEntity
+    from .button import _BASIC_NAMES
+    from .const import CONF_COVER_TIMINGS, CONF_ENTITY_ID, CONF_EXTERNAL_ENTITY, CONF_IGNORED_SCENE_ZONE
+    from .cover import LightManagerAirCover
+    from .entity_utils import command_name, is_single_action_actuator
+    from .light import LightManagerAirLight
+    from .switch import LightManagerAirSwitch
+
+    device_id = coordinator.device_id
+    labels: dict[tuple[str, str], str] = {
+        ("remote", f"{device_id}_remote"): "Remote",
+        ("sensor", f"{device_id}_last_radio_signal"): "Last Radio Signal",
+        ("event", f"{device_id}_radio_event"): "Radio Signal",
+        ("button", f"{device_id}_learn_radio_signal"): "Learn Radio Signal",
+        ("button", f"{device_id}_show_radio_automation_yaml"): "Show Radio Automation YAML",
+        ("button", f"{device_id}_synchronize"): "Synchronisieren",
+        ("button", f"{device_id}_export_xml"): "Export XML",
+        ("sensor", f"{device_id}_ip_address"): "IP Address",
+        ("sensor", f"{device_id}_connection_status"): "Connection Status",
+        ("sensor", f"{device_id}_zone_count"): "Zone Count",
+        ("sensor", f"{device_id}_actuator_count"): "Actuator Count",
+        ("sensor", f"{device_id}_scene_count"): "Scene Count",
+        ("sensor", f"{device_id}_marker_count"): "Marker Count",
+    }
+
+    for marker in coordinator.markers:
+        labels[("switch", f"{device_id}_marker_{marker.marker_id}")] = f"Marker {marker.marker_id}"
+
+    for channel in coordinator.weather_channels:
+        channel_label = getattr(channel, "channel_id", "")
+        if channel.weather_id:
+            labels[("weather", f"{device_id}_weather_{channel.channel_id}")] = f"Weather {channel_label}"
+        else:
+            if channel.temperature != "":
+                labels[("sensor", f"{device_id}_temperature_{channel.channel_id}")] = f"Temperature {channel_label}"
+            if channel.humidity != "" and channel.humidity > 0:
+                labels[("sensor", f"{device_id}_humidity_{channel.channel_id}")] = f"Humidity {channel_label}"
+
+    for zone in coordinator.zones:
+        if LightManagerAirBaseEntity.is_zone_ignored(zone.name, hass):
+            continue
+        for actuator in zone.actuators:
+            label = f"{zone.name} → {actuator.name}"
+            if LightManagerAirCover.check_actuator(actuator, zone.name, hass):
+                labels[("cover", f"{device_id}_{zone.name}_{actuator.name}")] = label
+                continue
+            if LightManagerAirLight.check_actuator(actuator, zone.name, hass):
+                labels[("light", f"{device_id}_{zone.name}_{actuator.type}_{actuator.name}")] = label
+                continue
+            if LightManagerAirSwitch.check_actuator(actuator, zone.name, hass):
+                labels[("switch", f"{device_id}_{zone.name}_{actuator.name}")] = label
+                continue
+
+            if is_single_action_actuator(actuator):
+                labels[("button", f"{device_id}_action_button_{zone.name}_{actuator.name}")] = label
+                continue
+
+            for index, command in enumerate(actuator.commands):
+                name = command_name(command)
+                if name in _BASIC_NAMES or name.endswith("%"):
+                    continue
+                labels[("button", f"{device_id}_button_{zone.name}_{actuator.name}_{index}_{command.name}")] = f"{label} → {name}"
+
+    if not LightManagerAirBaseEntity.is_zone_ignored(CONF_IGNORED_SCENE_ZONE, hass):
+        for index, scene in enumerate(coordinator.scenes):
+            labels[("scene", f"{device_id}_scene_{scene.name}")] = scene.name
+            labels[("button", f"{device_id}_scene_button_{index}_{scene.name}")] = scene.name
+
+    for cover_cfg in hass.data.get(DOMAIN, {}).get(CONF_COVER_TIMINGS, []) or []:
+        if cover_cfg.get(CONF_EXTERNAL_ENTITY, False):
+            entity_id = cover_cfg[CONF_ENTITY_ID]
+            labels[("cover", f"{DOMAIN}_cover_{entity_id.replace('.', '_')}")] = entity_id
+
+    return labels
 
 
 async def _async_cleanup_removed_entities(
@@ -352,8 +441,9 @@ async def _async_cleanup_removed_entities(
         # keeps the same zone/actuator based unique ID.
         if (entity_entry.domain, entity_entry.unique_id) in expected:
             continue
+        label = _entity_entry_label(entity_entry)
         registry.async_remove(entity_entry.entity_id)
-        removed.append(entity_entry.entity_id)
+        removed.append(label)
 
     if removed:
         _LOGGER.info(
@@ -520,8 +610,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     existing_entity_keys = _entity_registry_keys_for_entry(hass, entry)
     expected_entity_keys = _expected_entity_registry_keys(hass, lm_coordinator)
+    expected_entity_labels = _expected_entity_labels(hass, lm_coordinator)
     added_entities = sorted(
-        (_entity_label_from_key(key) for key in expected_entity_keys - existing_entity_keys),
+        (
+            expected_entity_labels.get(key, _entity_label_from_key(key))
+            for key in expected_entity_keys - existing_entity_keys
+        ),
         key=str.casefold,
     )
     added_devices = _added_device_labels_for_entry(hass, entry, lm_coordinator)
