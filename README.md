@@ -156,17 +156,99 @@ You can customize these intervals to suit your needs or disable polling entirely
 
 ⚠️ **Warning**: Short intervals improve response times but may impact performance. Use default settings as a starting point and adjust based on your system's capabilities.
 
-### Using Radio Bus Events for Automations
+## 📡 Radio Learning & Automation
 
-The Light Manager Air can receive radio bus events, which can be used to trigger automations in Home Assistant. The default entity ID for radio signals is `event.radio_signal`. Automations can be configured to listen for specific radio signals by using the event trigger. For example, you can set up a trigger in Home Assistant that listens for the `radio_signal` event with a specific code:
+The Light Manager Air integration includes a built-in radio learning mode that makes it easy to discover new 433 MHz and 868 MHz radio signals and create Home Assistant automations.
+
+### Starting Learning Mode
+
+Learning mode can be started in two different ways:
+
+- Press the **Learn Radio Signal** button on the Light Manager Air device.
+- Call the service:
+
+```text
+light_manager_air.start_radio_learning
+```
+
+The integration will wait for the next received radio signal.
+
+---
+
+### Learned Signal Event
+
+When a signal is received while learning mode is active, the integration fires the event:
+
+```text
+light_manager_air_radio_signal_learned
+```
+
+Example event data:
+
+```yaml
+code: rffs_E3C20100
+protocol: RFFS
+raw_code: E3C20100
+```
+
+At the same time a persistent notification is created in Home Assistant showing the received signal.
+
+---
+
+### Last Radio Signal Sensor
+
+The entity
+
+```text
+sensor.last_radio_signal
+```
+
+is updated whenever a new radio signal is received.
+
+Besides the current signal it also stores useful diagnostic information:
+
+- Protocol
+- Raw Code
+- Repeat Counter
+- Signal Counter
+- Reception Timestamp
+- History of the last 20 received signals
+
+This makes it easy to analyse unknown radio devices.
+
+---
+
+### Radio Event
+
+Every received radio signal is also exposed as a Home Assistant event:
+
+```text
+event.radio_signal
+```
+
+This allows automations to react instantly to received RF commands.
+
+Example:
 
 ```yaml
 triggers:
   - trigger: event
     event_type: radio_signal
     event_data:
-      code: rfit_14734E8A
+      code: rffs_E3C20100
 ```
+
+---
+
+### Automation Generator
+
+After learning a radio signal you can press the **Show Automation YAML** button.
+
+The integration automatically generates a ready-to-use Home Assistant automation template based on the last learned signal.
+
+Simply copy the generated YAML into one of your automations and adjust the actions to your needs.
+
+This greatly simplifies the creation of automations for new radio devices.
 
 ### Last Radio Signal Sensor
 
