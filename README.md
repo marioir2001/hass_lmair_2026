@@ -292,6 +292,36 @@ This greatly simplifies the creation of automations for new radio devices.
 
 ---
 
+## 📊 Diagnostics
+
+The integration provides several diagnostic entities to simplify troubleshooting.
+
+Available diagnostics:
+
+- IP Address
+- Connection Status
+- Number of Zones
+- Number of Devices
+- Number of Scenes
+- Number of Markers
+
+Additionally, the currently processed XML configuration can be exported directly from Home Assistant for troubleshooting purposes.
+
+---
+
+### XML Export
+
+The current configuration downloaded from the Light Manager Air can be exported using the **Export XML** button.
+
+The exported XML is useful for:
+
+- Troubleshooting
+- Comparing configurations
+- Reporting issues
+- Verifying synchronization
+
+---
+
 ### Cover Timings
 
 You can now configure covers to display their current position and set positions based on opening and closing times. To do this, add the following configuration to your `configuration.yaml` file:
