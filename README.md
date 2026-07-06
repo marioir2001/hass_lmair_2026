@@ -359,6 +359,8 @@ The exported XML is useful for:
 
 ---
 
+## ⚙️ Configuration Examples
+
 ### Cover Timings
 
 You can now configure covers to display their current position and set positions based on opening and closing times. To do this, add the following configuration to your `configuration.yaml` file:
