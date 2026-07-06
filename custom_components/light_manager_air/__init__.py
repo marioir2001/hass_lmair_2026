@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from datetime import datetime
 from pathlib import Path
 
@@ -146,42 +147,46 @@ def _count_actuators(coordinator: LightManagerAirCoordinator) -> int:
     return sum(len(zone.actuators) for zone in coordinator.zones)
 
 
-
-def _format_sync_item_label(item: object) -> str:
+def _humanize_sync_item(item) -> str:
     """Return a readable label for sync notification items.
 
-    Some sync paths may still pass HA domains plus Light Manager Air unique IDs,
-    for example ``button: <device_id>_action_button_<zone>_<actuator>``.
-    Persistent notifications are user-facing, so never expose those raw IDs when
-    we can derive the AirStudio zone/actuator names from them.
+    Some sync paths may pass a raw unique_id or a string formatted like
+    "button: <unique_id>". Do not expose these internal IDs in the user-facing
+    persistent notification.
     """
     value = str(item or "").strip()
     if not value:
         return ""
 
-    # Accept both "button: unique_id" and multiline "button:\nunique_id".
-    if ":" in value:
-        maybe_domain, maybe_unique = value.split(":", 1)
-        domain = maybe_domain.strip()
-        unique_id = maybe_unique.strip()
-        if domain and unique_id and "\n" not in domain:
-            return _entity_label_from_key((domain, unique_id))
+    # Handle strings such as "button: 34e..._action_button_zone_actuator"
+    # or multi-line variants produced by previous debug-style formatting.
+    match = re.match(r"^(?P<domain>[a-z_]+)\s*:\s*(?P<unique_id>.+)$", value, re.DOTALL)
+    if match:
+        domain = match.group("domain").strip()
+        unique_id = match.group("unique_id").strip()
+        value = _entity_label_from_key((domain, unique_id))
 
-    # Accept raw unique IDs as fallback.
-    for marker in ("_action_button_", "_button_", "_scene_button_", "_scene_"):
-        if marker in value:
-            return _entity_label_from_key(("", value))
+    # Also handle bare unique IDs.
+    elif "_action_button_" in value:
+        value = _entity_label_from_key(("button", value))
+    elif "_button_" in value:
+        value = _entity_label_from_key(("button", value))
+    elif "_scene_button_" in value:
+        value = _entity_label_from_key(("button", value))
+    elif "_scene_" in value:
+        value = _entity_label_from_key(("scene", value))
 
     return value
 
+
 def _format_sync_list(items: list[str] | tuple[str, ...] | None, limit: int = 10) -> list[str]:
     """Return a compact markdown list for sync notification sections."""
-    values = [_format_sync_item_label(item) for item in (items or []) if item]
-    values = [item for item in values if item]
+    values = [_humanize_sync_item(item) for item in (items or []) if item]
+    values = [value for value in values if value]
     if not values:
         return ["_Keine_"]
     shown = values[:limit]
-    lines = [f"- `{item}`" for item in shown]
+    lines = [f"- {item}" for item in shown]
     remaining = len(values) - len(shown)
     if remaining > 0:
         lines.append(f"- … und {remaining} weitere")
