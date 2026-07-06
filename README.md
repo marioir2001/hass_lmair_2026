@@ -292,7 +292,7 @@ light_manager_air:
 
 ## 1.3.0-beta.3
 
-### Added
+#### Added
 - Last Radio Signal sensor
 - Signal history
 - Repeat counter
