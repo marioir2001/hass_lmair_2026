@@ -333,6 +333,17 @@ The exported XML is useful for:
 
 ---
 
+## 🎮 Buttons
+
+| Button | Description |
+|---------|-------------|
+| Synchronize | Reload and synchronize the current configuration |
+| Export XML | Export the currently processed XML |
+| Learn Radio Signal | Learn the next received radio signal |
+| Show Automation YAML | Generate a ready-to-use automation template |
+
+---
+
 ### Cover Timings
 
 You can now configure covers to display their current position and set positions based on opening and closing times. To do this, add the following configuration to your `configuration.yaml` file:
