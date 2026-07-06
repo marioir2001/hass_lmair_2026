@@ -319,9 +319,51 @@ def _entity_registry_keys_for_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
 
 
 def _entity_label_from_key(key: tuple[str, str]) -> str:
-    """Return a fallback label for an entity registry key."""
+    """Return a user-facing fallback label for an entity registry key.
+
+    This function is only used when a new entity is not yet present in the
+    Home Assistant entity registry. In that case we may only have the
+    integration unique_id. Do not expose that raw unique_id in notifications;
+    turn known Light Manager Air patterns into readable names instead.
+    """
     domain, unique_id = key
-    return f"{domain}: {unique_id}"
+
+    def _title_part(value: str) -> str:
+        return value.replace("_", " ").strip().title()
+
+    if "_action_button_" in unique_id:
+        raw = unique_id.split("_action_button_", 1)[1]
+        parts = [part for part in raw.split("_") if part]
+        if len(parts) >= 2:
+            # Most command buttons use: <device_id>_action_button_<zone>_<actuator>.
+            # The zone is usually the first part; the rest belongs to the actuator.
+            zone = _title_part(parts[0])
+            name = _title_part("_".join(parts[1:]))
+            return f"{zone} → {name}"
+        if raw:
+            return _title_part(raw)
+
+    if "_button_" in unique_id:
+        raw = unique_id.split("_button_", 1)[1]
+        parts = [part for part in raw.split("_") if part]
+        if len(parts) >= 3:
+            # Pattern: <zone>_<actuator>_<index>_<command>.
+            zone = _title_part(parts[0])
+            actuator = _title_part(parts[1])
+            command = _title_part("_".join(parts[3:])) if len(parts) > 3 else ""
+            return f"{zone} → {actuator}{f' → {command}' if command else ''}"
+        if raw:
+            return _title_part(raw)
+
+    if "_scene_button_" in unique_id:
+        raw = unique_id.split("_scene_button_", 1)[1]
+        parts = raw.split("_", 1)
+        return _title_part(parts[1] if len(parts) > 1 else raw)
+
+    if "_scene_" in unique_id:
+        return _title_part(unique_id.split("_scene_", 1)[1])
+
+    return unique_id.replace("_", " ").strip().title() or f"{domain}: {unique_id}"
 
 
 def _entity_entry_label(entity_entry) -> str:
