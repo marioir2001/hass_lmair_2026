@@ -1,4 +1,4 @@
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/kmifka/hass_lmair)]
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/kmifka/hass_lmair)
 
 # Light Manager Air for Home Assistant
 
