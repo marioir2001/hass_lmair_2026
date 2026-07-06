@@ -411,6 +411,3 @@ light_manager_air:
 
 The complete release history is available in the
 [CHANGELOG](CHANGELOG.md).
-
-#### Fixed
-- Various bug fixes
