@@ -1,37 +1,61 @@
 [![GitHub release (latest by date)](https://img.shields.io/github/v/release/kmifka/hass_lmair)](https://github.com/kmifka/hass_lmair/releases/latest)
 
-# Light Manager Air Integration for Home Assistant
+# Light Manager Air for Home Assistant
 
-A Home Assistant custom integration for the jbmedia's Light Manager Air.
+A modern custom integration for the **JBMedia Light Manager Air**, providing advanced device management, smart synchronization, diagnostics and radio integration.
 
-# Credits
+## Credits
 
-Original project: https://github.com/kmifka/hass_lmair
+This project is based on the excellent work of **kmifka**.
 
-Maintained and extended by: MarioIR2001
+Since 2026 it has been actively maintained and significantly extended by **MarioIR2001**.
 
-## Key Features
+New features include:
 
-- **Automatic device discovery** on your local network
-- **Full control of**:
-  - **Lights** (including dimming)
-  - **Blinds/Covers**
-  - **Markers**
-  - **Scenes**
--  **Last Radio Signal sensor**
-    -   Protocol detection
-    -   Raw code
-    -   Repeat counter
-    -   Signal history (last 20 signals)
-- **Radio reception**: Receive 433 MHz and 868 MHz radio signals
-- **Marker status updates**: Read an control markers as a switch in Home Assistant
-- **Weather data**: Integration of connected weather channels
-- **Cover Positioning**: Configure covers to display and set their current position based on opening and closing times.
-- **Marker mapping**: Use markers as state proxies for stateless devices.
-- **Ignore Zones**: Configure zones to be ignored in Home Assistant
-- **Entity Type Conversion**: Convert entities to different types (e.g., light to switch)
+- Smart Synchronization
+- Automatic Cleanup
+- XML Export
+- Diagnostics
+- Radio Learning Mode
+- Last Radio Signal Sensor
+- Localization
 
-This integration bridges jb media's Light Manager Air with Home Assistant, unlocking advanced home automation capabilities.
+## ✨ Features
+
+### Device Support
+
+- 💡 Lights (including dimming)
+- 🔌 Switches
+- 🪟 Covers with position support
+- 🎬 Scenes
+- 📍 Markers
+- 🌦 Weather stations
+
+### Smart Synchronization
+
+- 🔄 Synchronize button
+- Automatic XML reload
+- Automatic discovery of new devices
+- Automatic discovery of new zones
+- Automatic cleanup of removed devices
+- Automatic cleanup of removed zones
+- Automatic entity type migration (Cover → Switch, etc.)
+
+### Radio Support
+
+- 📡 433 MHz and 868 MHz receiver
+- Last Radio Signal sensor
+- Learn Radio Signal button
+- YAML automation generator
+- Radio Event entity
+
+### Diagnostics
+
+- XML export
+- Connection status
+- Device statistics
+- Zone statistics
+- Marker statistics
 
 ---
 
