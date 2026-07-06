@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import logging
-import re
 from datetime import datetime
 from pathlib import Path
 
@@ -147,46 +146,13 @@ def _count_actuators(coordinator: LightManagerAirCoordinator) -> int:
     return sum(len(zone.actuators) for zone in coordinator.zones)
 
 
-def _humanize_sync_item(item) -> str:
-    """Return a readable label for sync notification items.
-
-    Some sync paths may pass a raw unique_id or a string formatted like
-    "button: <unique_id>". Do not expose these internal IDs in the user-facing
-    persistent notification.
-    """
-    value = str(item or "").strip()
-    if not value:
-        return ""
-
-    # Handle strings such as "button: 34e..._action_button_zone_actuator"
-    # or multi-line variants produced by previous debug-style formatting.
-    match = re.match(r"^(?P<domain>[a-z_]+)\s*:\s*(?P<unique_id>.+)$", value, re.DOTALL)
-    if match:
-        domain = match.group("domain").strip()
-        unique_id = match.group("unique_id").strip()
-        value = _entity_label_from_key((domain, unique_id))
-
-    # Also handle bare unique IDs.
-    elif "_action_button_" in value:
-        value = _entity_label_from_key(("button", value))
-    elif "_button_" in value:
-        value = _entity_label_from_key(("button", value))
-    elif "_scene_button_" in value:
-        value = _entity_label_from_key(("button", value))
-    elif "_scene_" in value:
-        value = _entity_label_from_key(("scene", value))
-
-    return value
-
-
 def _format_sync_list(items: list[str] | tuple[str, ...] | None, limit: int = 10) -> list[str]:
     """Return a compact markdown list for sync notification sections."""
-    values = [_humanize_sync_item(item) for item in (items or []) if item]
-    values = [value for value in values if value]
+    values = [str(item) for item in (items or []) if item]
     if not values:
         return ["_Keine_"]
     shown = values[:limit]
-    lines = [f"- {item}" for item in shown]
+    lines = [f"- `{item}`" for item in shown]
     remaining = len(values) - len(shown)
     if remaining > 0:
         lines.append(f"- … und {remaining} weitere")
@@ -353,140 +319,71 @@ def _entity_registry_keys_for_entry(hass: HomeAssistant, entry: ConfigEntry) -> 
 
 
 def _entity_label_from_key(key: tuple[str, str]) -> str:
-    """Return a user-facing fallback label for an entity registry key.
+    """Return a readable label for an entity registry key.
 
-    This function is only used when a new entity is not yet present in the
-    Home Assistant entity registry. In that case we may only have the
-    integration unique_id. Do not expose that raw unique_id in notifications;
-    turn known Light Manager Air patterns into readable names instead.
+    New entities are detected before Home Assistant has created their registry
+    entries. At that point we only have the integration unique_id. Convert the
+    known Light Manager Air unique_id patterns back into user-facing labels
+    instead of showing raw internal IDs in the sync notification.
     """
     domain, unique_id = key
 
-    def _title_part(value: str) -> str:
-        return value.replace("_", " ").strip().title()
+    def _pretty(value: str) -> str:
+        """Format an XML/unique-id name for display."""
+        return str(value).replace("_", " ").strip().title()
 
     if "_action_button_" in unique_id:
         raw = unique_id.split("_action_button_", 1)[1]
-        parts = [part for part in raw.split("_") if part]
-        if len(parts) >= 2:
-            # Most command buttons use: <device_id>_action_button_<zone>_<actuator>.
-            # The zone is usually the first part; the rest belongs to the actuator.
-            zone = _title_part(parts[0])
-            name = _title_part("_".join(parts[1:]))
-            return f"{zone} → {name}"
-        if raw:
-            return _title_part(raw)
+        zone, _, actuator = raw.partition("_")
+        if actuator:
+            return f"{_pretty(zone)} → {_pretty(actuator)}"
+        return _pretty(raw)
 
     if "_button_" in unique_id:
         raw = unique_id.split("_button_", 1)[1]
         parts = [part for part in raw.split("_") if part]
-        if len(parts) >= 3:
-            # Pattern: <zone>_<actuator>_<index>_<command>.
-            zone = _title_part(parts[0])
-            actuator = _title_part(parts[1])
-            command = _title_part("_".join(parts[3:])) if len(parts) > 3 else ""
-            return f"{zone} → {actuator}{f' → {command}' if command else ''}"
-        if raw:
-            return _title_part(raw)
+        if len(parts) >= 4:
+            zone = parts[0]
+            actuator = parts[1]
+            # parts[2] is the command index
+            command = "_".join(parts[3:])
+            return f"{_pretty(zone)} → {_pretty(actuator)} → {_pretty(command)}"
+        if len(parts) >= 2:
+            return f"{_pretty(parts[0])} → {_pretty('_'.join(parts[1:]))}"
+        return _pretty(raw)
 
     if "_scene_button_" in unique_id:
         raw = unique_id.split("_scene_button_", 1)[1]
-        parts = raw.split("_", 1)
-        return _title_part(parts[1] if len(parts) > 1 else raw)
+        _, _, scene = raw.partition("_")
+        return _pretty(scene or raw)
 
     if "_scene_" in unique_id:
-        return _title_part(unique_id.split("_scene_", 1)[1])
+        return _pretty(unique_id.split("_scene_", 1)[1])
 
-    return unique_id.replace("_", " ").strip().title() or f"{domain}: {unique_id}"
+    if "_marker_" in unique_id:
+        return f"Marker {unique_id.split('_marker_', 1)[1]}"
 
-
-def _entity_entry_label(entity_entry) -> str:
-    """Return the best user-facing label for an entity registry entry."""
-    return (
-        getattr(entity_entry, "name", None)
-        or getattr(entity_entry, "original_name", None)
-        or getattr(entity_entry, "entity_id", None)
-        or getattr(entity_entry, "unique_id", None)
-        or "Unknown entity"
-    )
-
-
-def _expected_entity_labels(hass: HomeAssistant, coordinator: LightManagerAirCoordinator) -> dict[tuple[str, str], str]:
-    """Build user-facing labels for expected entities from the current XML/config."""
-    from .base_entity import LightManagerAirBaseEntity
-    from .button import _BASIC_NAMES
-    from .const import CONF_COVER_TIMINGS, CONF_ENTITY_ID, CONF_EXTERNAL_ENTITY, CONF_IGNORED_SCENE_ZONE
-    from .cover import LightManagerAirCover
-    from .entity_utils import command_name, is_single_action_actuator
-    from .light import LightManagerAirLight
-    from .switch import LightManagerAirSwitch
-
-    device_id = coordinator.device_id
-    labels: dict[tuple[str, str], str] = {
-        ("remote", f"{device_id}_remote"): "Remote",
-        ("sensor", f"{device_id}_last_radio_signal"): "Last Radio Signal",
-        ("event", f"{device_id}_radio_event"): "Radio Signal",
-        ("button", f"{device_id}_learn_radio_signal"): "Learn Radio Signal",
-        ("button", f"{device_id}_show_radio_automation_yaml"): "Show Radio Automation YAML",
-        ("button", f"{device_id}_synchronize"): "Synchronisieren",
-        ("button", f"{device_id}_export_xml"): "Export XML",
-        ("sensor", f"{device_id}_ip_address"): "IP Address",
-        ("sensor", f"{device_id}_connection_status"): "Connection Status",
-        ("sensor", f"{device_id}_zone_count"): "Zone Count",
-        ("sensor", f"{device_id}_actuator_count"): "Actuator Count",
-        ("sensor", f"{device_id}_scene_count"): "Scene Count",
-        ("sensor", f"{device_id}_marker_count"): "Marker Count",
+    # Main integration helper entities
+    helper_labels = {
+        "_remote": "Remote",
+        "_last_radio_signal": "Last Radio Signal",
+        "_radio_event": "Radio Signal",
+        "_learn_radio_signal": "Learn Radio Signal",
+        "_show_radio_automation_yaml": "Show Radio Automation YAML",
+        "_synchronize": "Synchronisieren",
+        "_export_xml": "Export XML",
+        "_ip_address": "IP Address",
+        "_connection_status": "Connection Status",
+        "_zone_count": "Zone Count",
+        "_actuator_count": "Actuator Count",
+        "_scene_count": "Scene Count",
+        "_marker_count": "Marker Count",
     }
+    for suffix, label in helper_labels.items():
+        if unique_id.endswith(suffix):
+            return label
 
-    for marker in coordinator.markers:
-        labels[("switch", f"{device_id}_marker_{marker.marker_id}")] = f"Marker {marker.marker_id}"
-
-    for channel in coordinator.weather_channels:
-        channel_label = getattr(channel, "channel_id", "")
-        if channel.weather_id:
-            labels[("weather", f"{device_id}_weather_{channel.channel_id}")] = f"Weather {channel_label}"
-        else:
-            if channel.temperature != "":
-                labels[("sensor", f"{device_id}_temperature_{channel.channel_id}")] = f"Temperature {channel_label}"
-            if channel.humidity != "" and channel.humidity > 0:
-                labels[("sensor", f"{device_id}_humidity_{channel.channel_id}")] = f"Humidity {channel_label}"
-
-    for zone in coordinator.zones:
-        if LightManagerAirBaseEntity.is_zone_ignored(zone.name, hass):
-            continue
-        for actuator in zone.actuators:
-            label = f"{zone.name} → {actuator.name}"
-            if LightManagerAirCover.check_actuator(actuator, zone.name, hass):
-                labels[("cover", f"{device_id}_{zone.name}_{actuator.name}")] = label
-                continue
-            if LightManagerAirLight.check_actuator(actuator, zone.name, hass):
-                labels[("light", f"{device_id}_{zone.name}_{actuator.type}_{actuator.name}")] = label
-                continue
-            if LightManagerAirSwitch.check_actuator(actuator, zone.name, hass):
-                labels[("switch", f"{device_id}_{zone.name}_{actuator.name}")] = label
-                continue
-
-            if is_single_action_actuator(actuator):
-                labels[("button", f"{device_id}_action_button_{zone.name}_{actuator.name}")] = label
-                continue
-
-            for index, command in enumerate(actuator.commands):
-                name = command_name(command)
-                if name in _BASIC_NAMES or name.endswith("%"):
-                    continue
-                labels[("button", f"{device_id}_button_{zone.name}_{actuator.name}_{index}_{command.name}")] = f"{label} → {name}"
-
-    if not LightManagerAirBaseEntity.is_zone_ignored(CONF_IGNORED_SCENE_ZONE, hass):
-        for index, scene in enumerate(coordinator.scenes):
-            labels[("scene", f"{device_id}_scene_{scene.name}")] = scene.name
-            labels[("button", f"{device_id}_scene_button_{index}_{scene.name}")] = scene.name
-
-    for cover_cfg in hass.data.get(DOMAIN, {}).get(CONF_COVER_TIMINGS, []) or []:
-        if cover_cfg.get(CONF_EXTERNAL_ENTITY, False):
-            entity_id = cover_cfg[CONF_ENTITY_ID]
-            labels[("cover", f"{DOMAIN}_cover_{entity_id.replace('.', '_')}")] = entity_id
-
-    return labels
+    return _pretty(unique_id) or f"{domain}: {unique_id}"
 
 
 async def _async_cleanup_removed_entities(
@@ -517,9 +414,8 @@ async def _async_cleanup_removed_entities(
         # keeps the same zone/actuator based unique ID.
         if (entity_entry.domain, entity_entry.unique_id) in expected:
             continue
-        label = _entity_entry_label(entity_entry)
         registry.async_remove(entity_entry.entity_id)
-        removed.append(label)
+        removed.append(entity_entry.entity_id)
 
     if removed:
         _LOGGER.info(
@@ -686,12 +582,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     existing_entity_keys = _entity_registry_keys_for_entry(hass, entry)
     expected_entity_keys = _expected_entity_registry_keys(hass, lm_coordinator)
-    expected_entity_labels = _expected_entity_labels(hass, lm_coordinator)
     added_entities = sorted(
-        (
-            expected_entity_labels.get(key, _entity_label_from_key(key))
-            for key in expected_entity_keys - existing_entity_keys
-        ),
+        (_entity_label_from_key(key) for key in expected_entity_keys - existing_entity_keys),
         key=str.casefold,
     )
     added_devices = _added_device_labels_for_entry(hass, entry, lm_coordinator)
