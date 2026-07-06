@@ -52,7 +52,7 @@ The goal is to continuously improve the integration while keeping full compatibi
 - [Diagnostics](#-diagnostics)
 - [Services](#-services)
 - [Buttons](#-buttons)
-- [Configuration Examples](#-configuration-examples)
+- [Configuration Examples](#%EF%B8%8F-configuration-examples)
 - [Changelog](#-changelog)
 
 ---
