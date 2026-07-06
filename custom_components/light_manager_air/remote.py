@@ -27,7 +27,8 @@ async def async_setup_entry(
 class LightManagerAirRemote(RemoteEntity):
     """Remote entity for sending configured or raw Light Manager Air commands."""
 
-    _attr_name = "Light Manager Air Remote"
+    _attr_has_entity_name = True
+    _attr_translation_key = "remote"
     _attr_is_on = True
     # Keep the remote entity for existing automations, but keep it out of the
     # normal overview for new installations because its ON/OFF state does not

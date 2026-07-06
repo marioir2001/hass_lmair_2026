@@ -37,10 +37,10 @@ async def async_setup_entry(
         LightManagerAirLastRadioSignalSensor(coordinator),
         LightManagerAirIPAddressSensor(coordinator),
         LightManagerAirConnectionStatusSensor(coordinator),
-        LightManagerAirCountSensor(coordinator, "zone_count", "Zones", "mdi:folder-home", lambda c: len(c.zones)),
-        LightManagerAirCountSensor(coordinator, "actuator_count", "Actuators", "mdi:devices", lambda c: sum(len(zone.actuators) for zone in c.zones)),
-        LightManagerAirCountSensor(coordinator, "scene_count", "Scenes", "mdi:movie-open", lambda c: len(c.scenes)),
-        LightManagerAirCountSensor(coordinator, "marker_count", "Markers", "mdi:bookmark-check-outline", lambda c: len(c.markers)),
+        LightManagerAirCountSensor(coordinator, "zone_count", "zones", "mdi:folder-home", lambda c: len(c.zones)),
+        LightManagerAirCountSensor(coordinator, "actuator_count", "actuators", "mdi:devices", lambda c: sum(len(zone.actuators) for zone in c.zones)),
+        LightManagerAirCountSensor(coordinator, "scene_count", "scenes", "mdi:movie-open", lambda c: len(c.scenes)),
+        LightManagerAirCountSensor(coordinator, "marker_count", "markers", "mdi:bookmark-check-outline", lambda c: len(c.markers)),
     ]
 
     for channel in coordinator.weather_channels:
@@ -119,12 +119,12 @@ class LightManagerAirDiagnosticSensor(SensorEntity):
     _attr_has_entity_name = True
     _attr_entity_category = EntityCategory.DIAGNOSTIC
 
-    def __init__(self, coordinator: LightManagerAirCoordinator, unique_suffix: str, name: str, icon: str | None = None) -> None:
+    def __init__(self, coordinator: LightManagerAirCoordinator, unique_suffix: str, translation_key: str, icon: str | None = None) -> None:
         """Initialize the diagnostic sensor."""
         self._coordinator = coordinator
         self._attr_unique_id = f"{coordinator.device_id}_{unique_suffix}"
         self._attr_device_info = coordinator.device_info
-        self._attr_name = name
+        self._attr_translation_key = translation_key
         if icon:
             self._attr_icon = icon
 
@@ -134,7 +134,7 @@ class LightManagerAirIPAddressSensor(LightManagerAirDiagnosticSensor):
 
     def __init__(self, coordinator: LightManagerAirCoordinator) -> None:
         """Initialize the IP address sensor."""
-        super().__init__(coordinator, "ip_address", "IP Address", "mdi:ip-network")
+        super().__init__(coordinator, "ip_address", "ip_address", "mdi:ip-network")
 
     @property
     def native_value(self) -> str | None:
@@ -147,7 +147,7 @@ class LightManagerAirConnectionStatusSensor(LightManagerAirDiagnosticSensor):
 
     def __init__(self, coordinator: LightManagerAirCoordinator) -> None:
         """Initialize the connection status sensor."""
-        super().__init__(coordinator, "connection_status", "Connection Status", "mdi:lan-connect")
+        super().__init__(coordinator, "connection_status", "connection_status", "mdi:lan-connect")
 
     @property
     def native_value(self) -> str:
@@ -177,7 +177,7 @@ class LightManagerAirLastRadioSignalSensor(SensorEntity):
     """Sensor exposing received Light Manager Air radio signal information."""
 
     _attr_has_entity_name = True
-    _attr_name = "Last Radio Signal"
+    _attr_translation_key = "last_radio_signal"
     _attr_icon = "mdi:radio-tower"
 
     def __init__(self, coordinator: LightManagerAirCoordinator) -> None:

@@ -150,7 +150,7 @@ class LightManagerAirSynchronizeButton(ButtonEntity):
     """Button that reloads/synchronizes the Light Manager Air XML configuration."""
 
     _attr_has_entity_name = True
-    _attr_name = "Synchronize"
+    _attr_translation_key = "synchronize"
     _attr_icon = "mdi:sync"
 
     def __init__(self, coordinator, entry_id):
@@ -174,7 +174,7 @@ class LightManagerAirLearnRadioSignalButton(ButtonEntity):
     """Button that starts the radio learning mode."""
 
     _attr_has_entity_name = True
-    _attr_name = "Learn Radio Signal"
+    _attr_translation_key = "learn_radio_signal"
     _attr_icon = "mdi:radio-handheld"
 
     def __init__(self, coordinator, entry_id):
@@ -198,7 +198,7 @@ class LightManagerAirRadioAutomationYamlButton(ButtonEntity):
     """Button that shows automation YAML for the last learned radio signal."""
 
     _attr_has_entity_name = True
-    _attr_name = "Show Radio Automation YAML"
+    _attr_translation_key = "show_radio_automation_yaml"
     _attr_icon = "mdi:file-code-outline"
 
     def __init__(self, coordinator):
@@ -212,7 +212,6 @@ class LightManagerAirRadioAutomationYamlButton(ButtonEntity):
         await self.hass.services.async_call(
             DOMAIN,
             SERVICE_SHOW_RADIO_AUTOMATION_YAML,
-    SERVICE_EXPORT_XML,
             {},
             blocking=False,
         )
@@ -222,7 +221,7 @@ class LightManagerAirExportXmlButton(ButtonEntity):
     """Button that exports the current Light Manager Air XML to /config."""
 
     _attr_has_entity_name = True
-    _attr_name = "Export XML"
+    _attr_translation_key = "export_xml"
     _attr_icon = "mdi:file-export-outline"
 
     def __init__(self, coordinator, entry_id):
