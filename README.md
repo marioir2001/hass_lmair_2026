@@ -301,69 +301,70 @@ light_manager_air:
 - Learn Radio Signal button
 - Reload Fixtures service
 
-### Changed
+#### Changed
 - Marker entities moved into a dedicated device
 
 ## 1.3.0-beta.4
 
-### Added
+#### Added
 - Radio Learning Mode
 - light_manager_air_radio_signal_learned event
 - Radio learning notification
-### Improved
+
+#### Improved
 - Radio event handling
 - Event entity reliability
 
 ## 1.3.0-beta.5
 
-### Added
+#### Added
 - YAML Automation Generator
 - Button to generate automation YAML from the last learned radio signal
 
-### Improved
+#### Improved
 - Radio workflow for creating Home Assistant automations
 
 ## 1.3.0-beta.6
 
-### Added
+#### Added
 - Smart Synchronization
 - Automatic detection of newly created devices
 - Automatic detection of newly created zones
 - Automatic detection of new scenes
 
-### Improved
+#### Improved
 - Reload service now performs a complete synchronization
 
 ## 1.3.0-beta.7
 
-### Added
+#### Added
 - Automatic cleanup of removed devices
 - Automatic cleanup of removed scenes
 - Automatic cleanup of removed zones
 
-### Improved
+#### Improved
 - Entity registry cleanup
 - Stable entity IDs during synchronization
 
 ## 1.3.0-beta.8
 
-### Added
+#### Added
 - Automatic entity type migration
   - Cover → Switch
   - Cover → Light
   - Switch → Cover
   - and other supported conversions
 
-### Improved
+#### Improved
 - Synchronization engine
 - Registry cleanup performance
 
-### Fixed
+#### Fixed
 - Entity type changes no longer require deleting and re-adding the integration
 
 ## 1.3.0-beta.9
 
-### Added
+#### Added
 - Synchronize button
 - Synchronization result notification
 - Diagnostic sensors
@@ -374,33 +375,33 @@ light_manager_air:
   - Scene Counter
   - Marker Counter
 
-### Improved
+#### Improved
 - User experience during synchronization
 
 ## 1.3.0-beta.10
 
-### Added
+#### Added
 - XML Export button
 - light_manager_air.export_xml service
 - Export current XML to Home Assistant
 - Timestamped XML snapshots
 - XML debugging support
 
-### Improved
+#### Improved
 - Diagnostics for synchronization troubleshooting
 
 ## 1.3.0-beta.11
 
-### Added
+#### Added
 - Native Home Assistant localization support
 - Translation keys for buttons
 - Translation keys for diagnostic sensors
 - German translations
 - English translations
 
-##ä Improved
+#### Improved
 - Home Assistant native multilingual support
 - Entity naming according to Home Assistant standards
 
-### Fixed
+#### Fixed
 - Various bug fixes
