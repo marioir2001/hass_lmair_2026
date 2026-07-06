@@ -136,6 +136,37 @@ def _create_radio_automation_notification(hass: HomeAssistant, code: str, protoc
     )
 
 
+
+
+def _count_actuators(coordinator: LightManagerAirCoordinator) -> int:
+    """Return the number of actuators loaded from the Light Manager XML."""
+    return sum(len(zone.actuators) for zone in coordinator.zones)
+
+
+def _sync_summary_message(coordinator: LightManagerAirCoordinator, sync_stats: dict | None = None) -> str:
+    """Build a human-readable sync summary for persistent notifications."""
+    sync_stats = sync_stats or {}
+    host = coordinator.entry.data.get("host") or getattr(coordinator.light_manager, "host", None)
+    online = "Online" if getattr(coordinator, "last_update_success", True) else "Offline"
+    lines = [
+        "Die aktuelle Konfiguration wurde vom Light Manager Air geladen.",
+        "",
+        f"**Status:** {online}",
+    ]
+    if host:
+        lines.append(f"**IP/Host:** `{host}`")
+    lines.extend([
+        f"**Zonen:** {len(coordinator.zones)}",
+        f"**Aktoren/Geräte:** {_count_actuators(coordinator)}",
+        f"**Szenen:** {len(coordinator.scenes)}",
+        f"**Marker:** {len(coordinator.markers)}",
+        f"**Wetterkanäle:** {len(coordinator.weather_channels)}",
+        f"**Entfernte Entitäten:** {sync_stats.get('removed_entities', 0)}",
+        f"**Entfernte Geräte/Zonen:** {sync_stats.get('removed_devices', 0)}",
+    ])
+    return "\n".join(lines)
+
+
 def _expected_entity_registry_keys(hass: HomeAssistant, coordinator: LightManagerAirCoordinator) -> set[tuple[str, str]]:
     """Build the entity registry keys that should exist for the current XML/config.
 
@@ -159,6 +190,13 @@ def _expected_entity_registry_keys(hass: HomeAssistant, coordinator: LightManage
         ("event", f"{device_id}_radio_event"),
         ("button", f"{device_id}_learn_radio_signal"),
         ("button", f"{device_id}_show_radio_automation_yaml"),
+        ("button", f"{device_id}_synchronize"),
+        ("sensor", f"{device_id}_ip_address"),
+        ("sensor", f"{device_id}_connection_status"),
+        ("sensor", f"{device_id}_zone_count"),
+        ("sensor", f"{device_id}_actuator_count"),
+        ("sensor", f"{device_id}_scene_count"),
+        ("sensor", f"{device_id}_marker_count"),
     }
 
     for marker in coordinator.markers:
@@ -214,7 +252,7 @@ async def _async_cleanup_removed_entities(
     hass: HomeAssistant,
     entry: ConfigEntry,
     coordinator: LightManagerAirCoordinator,
-) -> None:
+) -> int:
     """Remove entity registry entries that no longer exist in the Light Manager XML.
 
     Home Assistant keeps old registry entries after an integration reload. Without
@@ -247,6 +285,7 @@ async def _async_cleanup_removed_entities(
             len(removed),
             ", ".join(removed),
         )
+    return len(removed)
 
 
 def _expected_device_identifiers(hass: HomeAssistant, coordinator: LightManagerAirCoordinator) -> set[tuple[str, str]]:
@@ -274,7 +313,7 @@ async def _async_cleanup_removed_devices(
     hass: HomeAssistant,
     entry: ConfigEntry,
     coordinator: LightManagerAirCoordinator,
-) -> None:
+) -> int:
     """Remove empty device registry entries that no longer exist in the XML.
 
     Entity cleanup alone is not enough: Home Assistant may keep an empty device
@@ -316,6 +355,7 @@ async def _async_cleanup_removed_devices(
             len(removed),
             ", ".join(removed),
         )
+    return len(removed)
 
 CONFIG_SCHEMA = vol.Schema(
     {
@@ -365,8 +405,12 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     
     hass.data[DOMAIN][entry.entry_id] = lm_coordinator
 
-    await _async_cleanup_removed_entities(hass, entry, lm_coordinator)
-    await _async_cleanup_removed_devices(hass, entry, lm_coordinator)
+    removed_entities = await _async_cleanup_removed_entities(hass, entry, lm_coordinator)
+    removed_devices = await _async_cleanup_removed_devices(hass, entry, lm_coordinator)
+    hass.data[DOMAIN].setdefault("last_sync_stats", {})[entry.entry_id] = {
+        "removed_entities": removed_entities,
+        "removed_devices": removed_devices,
+    }
 
     def _get_service_coordinator(target_entry_id: str | None):
         target_entry_id = target_entry_id or entry.entry_id
@@ -510,6 +554,15 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     async def _async_handle_reload_service(call):
         target_entry_id = call.data.get(ATTR_ENTRY_ID, entry.entry_id)
         await hass.config_entries.async_reload(target_entry_id)
+        coordinator = hass.data[DOMAIN].get(target_entry_id)
+        if coordinator is not None:
+            sync_stats = hass.data[DOMAIN].get("last_sync_stats", {}).get(target_entry_id, {})
+            persistent_notification.async_create(
+                hass,
+                _sync_summary_message(coordinator, sync_stats),
+                title="Light Manager Air synchronisiert",
+                notification_id="light_manager_air_sync_complete",
+            )
 
     if not hass.services.has_service(DOMAIN, SERVICE_RELOAD_FIXTURES):
         hass.services.async_register(

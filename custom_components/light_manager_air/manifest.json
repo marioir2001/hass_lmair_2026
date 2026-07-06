@@ -12,5 +12,5 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/marioir2001/hass_lmair_2026/issues",
   "requirements": [],
-  "version": "1.3.0b8"
+  "version": "1.3.0b9.1"
 }

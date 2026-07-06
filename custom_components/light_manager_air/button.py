@@ -11,6 +11,7 @@ from .base_entity import LightManagerAirBaseEntity
 from .const import (
     DOMAIN,
     CONF_IGNORED_SCENE_ZONE,
+    SERVICE_RELOAD_FIXTURES,
     SERVICE_START_RADIO_LEARNING,
     SERVICE_SHOW_RADIO_AUTOMATION_YAML,
     ATTR_ENTRY_ID,
@@ -29,6 +30,7 @@ async def async_setup_entry(
     """Set up command buttons."""
     coordinator: LightManagerAirCoordinator = hass.data[DOMAIN][entry.entry_id]
     entities = [
+        LightManagerAirSynchronizeButton(coordinator, entry.entry_id),
         LightManagerAirLearnRadioSignalButton(coordinator, entry.entry_id),
         LightManagerAirRadioAutomationYamlButton(coordinator),
     ]
@@ -140,6 +142,30 @@ class LightManagerAirSceneButton(ButtonEntity):
             await self._coordinator.async_refresh()
         except ConnectionError as exc:
             raise HomeAssistantError(exc) from exc
+
+
+class LightManagerAirSynchronizeButton(ButtonEntity):
+    """Button that reloads/synchronizes the Light Manager Air XML configuration."""
+
+    _attr_has_entity_name = True
+    _attr_name = "Synchronize"
+    _attr_icon = "mdi:sync"
+
+    def __init__(self, coordinator, entry_id):
+        """Initialize the synchronize button."""
+        self._coordinator = coordinator
+        self._entry_id = entry_id
+        self._attr_unique_id = f"{coordinator.device_id}_synchronize"
+        self._attr_device_info = coordinator.device_info
+
+    async def async_press(self) -> None:
+        """Synchronize the current XML/configuration from the Light Manager Air."""
+        await self.hass.services.async_call(
+            DOMAIN,
+            SERVICE_RELOAD_FIXTURES,
+            {ATTR_ENTRY_ID: self._entry_id},
+            blocking=False,
+        )
 
 
 class LightManagerAirLearnRadioSignalButton(ButtonEntity):
