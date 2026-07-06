@@ -146,9 +146,38 @@ def _count_actuators(coordinator: LightManagerAirCoordinator) -> int:
     return sum(len(zone.actuators) for zone in coordinator.zones)
 
 
+
+def _format_sync_item_label(item: object) -> str:
+    """Return a readable label for sync notification items.
+
+    Some sync paths may still pass HA domains plus Light Manager Air unique IDs,
+    for example ``button: <device_id>_action_button_<zone>_<actuator>``.
+    Persistent notifications are user-facing, so never expose those raw IDs when
+    we can derive the AirStudio zone/actuator names from them.
+    """
+    value = str(item or "").strip()
+    if not value:
+        return ""
+
+    # Accept both "button: unique_id" and multiline "button:\nunique_id".
+    if ":" in value:
+        maybe_domain, maybe_unique = value.split(":", 1)
+        domain = maybe_domain.strip()
+        unique_id = maybe_unique.strip()
+        if domain and unique_id and "\n" not in domain:
+            return _entity_label_from_key((domain, unique_id))
+
+    # Accept raw unique IDs as fallback.
+    for marker in ("_action_button_", "_button_", "_scene_button_", "_scene_"):
+        if marker in value:
+            return _entity_label_from_key(("", value))
+
+    return value
+
 def _format_sync_list(items: list[str] | tuple[str, ...] | None, limit: int = 10) -> list[str]:
     """Return a compact markdown list for sync notification sections."""
-    values = [str(item) for item in (items or []) if item]
+    values = [_format_sync_item_label(item) for item in (items or []) if item]
+    values = [item for item in values if item]
     if not values:
         return ["_Keine_"]
     shown = values[:limit]
