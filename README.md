@@ -292,12 +292,17 @@ light_manager_air:
 
 ### 1.3.0-beta.3
 
-- Added Last Radio Signal sensor
-- Added signal history
-- Added repeat counter
-- Added signal counter
-- Added Learn Radio Signal service
-- Added Learn Radio Signal button
-- Added Reload Fixtures service
+### Added
+- Last Radio Signal sensor
+- Signal history
+- Repeat counter
+- Signal counter
+- Learn Radio Signal service
+- Learn Radio Signal button
+- Reload Fixtures service
+
+### Changed
 - Marker entities moved into a dedicated device
+
+### Fixed
 - Various bug fixes
