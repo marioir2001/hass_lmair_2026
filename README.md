@@ -268,26 +268,7 @@ Simply copy the generated YAML into one of your automations and adjust the actio
 
 This greatly simplifies the creation of automations for new radio devices.
 
-### Last Radio Signal Sensor
-
-Entity:
-
-sensor.last_radio_signal
-
-State example:
-
-rffs_E3C20100
-
-Attributes:
-
--   code
--   protocol
--   raw_code
--   received_at
--   last_received
--   signal_count
--   repeat_count
--   history
+---
 
 ### Cover Timings
 
