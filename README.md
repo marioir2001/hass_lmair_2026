@@ -220,6 +220,20 @@ Besides the current signal it also stores useful diagnostic information:
 
 This makes it easy to analyse unknown radio devices.
 
+Example:
+
+    code: rffs_E3C20100
+    protocol: RFFS
+    raw_code: E3C20100
+    received_at: "2026-07-02T12:28:08"
+    last_received: "2026-07-02 12:28:08"
+    signal_count: 42
+    repeat_count: 3
+    history:
+      - "2026-07-02 12:28:08 | rffs_E3C20100"
+      - "2026-07-02 12:27:59 | rffs_E3C20100"
+      - "2026-07-02 12:27:41 | rffs_270B0412"
+      
 ---
 
 ### Radio Event
@@ -274,20 +288,6 @@ Attributes:
 -   signal_count
 -   repeat_count
 -   history
-
-Example:
-
-    code: rffs_E3C20100
-    protocol: RFFS
-    raw_code: E3C20100
-    received_at: "2026-07-02T12:28:08"
-    last_received: "2026-07-02 12:28:08"
-    signal_count: 42
-    repeat_count: 3
-    history:
-      - "2026-07-02 12:28:08 | rffs_E3C20100"
-      - "2026-07-02 12:27:59 | rffs_E3C20100"
-      - "2026-07-02 12:27:41 | rffs_270B0412"
 
 ### Cover Timings
 
