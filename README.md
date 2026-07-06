@@ -1,37 +1,68 @@
-[![GitHub release (latest by date)](https://img.shields.io/github/v/release/kmifka/hass_lmair)](https://github.com/kmifka/hass_lmair/releases/latest)
+![GitHub release (latest by date)](https://img.shields.io/github/v/release/kmifka/hass_lmair)
+![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.6+-41BDF5.svg)
+![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)
 
-# Light Manager Air Integration for Home Assistant
 
-A Home Assistant custom integration for the jbmedia's Light Manager Air.
+# Light Manager Air for Home Assistant
 
-# Credits
+A modern custom integration for the **JBMedia Light Manager Air**, providing advanced device management, smart synchronization, diagnostics and radio integration.
 
-Original project: https://github.com/kmifka/hass_lmair
+## Credits
 
-Maintained and extended by: MarioIR2001
+This project is based on the excellent work of **kmifka**.
 
-## Key Features
+Since 2026 it has been actively maintained and significantly extended by **MarioIR2001**.
 
-- **Automatic device discovery** on your local network
-- **Full control of**:
-  - **Lights** (including dimming)
-  - **Blinds/Covers**
-  - **Markers**
-  - **Scenes**
--  **Last Radio Signal sensor**
-    -   Protocol detection
-    -   Raw code
-    -   Repeat counter
-    -   Signal history (last 20 signals)
-- **Radio reception**: Receive 433 MHz and 868 MHz radio signals
-- **Marker status updates**: Read an control markers as a switch in Home Assistant
-- **Weather data**: Integration of connected weather channels
-- **Cover Positioning**: Configure covers to display and set their current position based on opening and closing times.
-- **Marker mapping**: Use markers as state proxies for stateless devices.
-- **Ignore Zones**: Configure zones to be ignored in Home Assistant
-- **Entity Type Conversion**: Convert entities to different types (e.g., light to switch)
+New features include:
 
-This integration bridges jb media's Light Manager Air with Home Assistant, unlocking advanced home automation capabilities.
+- Smart Synchronization
+- Automatic Cleanup
+- XML Export
+- Diagnostics
+- Radio Learning Mode
+- Last Radio Signal Sensor
+- Localization
+
+## ✨ Features
+
+### Device Support
+
+- 💡 Lights (including dimming)
+- 🔌 Switches
+- 🪟 Covers with position support
+- 🎬 Scenes
+- 📍 Markers
+- 🌦 Weather stations
+
+### 🔄 Smart Synchronization
+
+The integration provides a built-in synchronization mechanism to keep Home Assistant in sync with the current Light Manager Air configuration.
+
+Features:
+
+- One-click synchronization
+- Automatic discovery of new devices
+- Automatic discovery of new zones
+- Automatic removal of deleted devices
+- Automatic removal of deleted zones
+- Automatic entity type migration (e.g. Cover → Switch)
+- Stable entity IDs whenever possible
+
+### Radio Support
+
+- 📡 433 MHz and 868 MHz receiver
+- Last Radio Signal sensor
+- Learn Radio Signal button
+- YAML automation generator
+- Radio Event entity
+
+### Diagnostics
+
+- XML export
+- Connection status
+- Device statistics
+- Zone statistics
+- Marker statistics
 
 ---
 
@@ -77,17 +108,6 @@ It is crucial that each combination of zone and actuator name in the Light Manag
 
 ---
 
-## Reloading devices and scenes after changes
-
-When you add or rename zones, actuators, or scenes in the Light Manager Air, Home Assistant needs a reload to pick them up. The integration now exposes a service for this:
-
-- Call service `light_manager_air.reload_fixtures` (optional data: `entry_id` if you have multiple instances) to refresh devices and entities from the Light Manager.
-- Alternatively, go to **Settings → Devices & Services → Light Manager Air → Reload** in the UI.
-
-The service performs a full config-entry reload, so entity IDs stay stable but new devices/scenes become available without reinstalling the integration.
-
----
-
 ## Configuration
 
 ### Polling Settings
@@ -106,38 +126,102 @@ You can customize these intervals to suit your needs or disable polling entirely
 
 ⚠️ **Warning**: Short intervals improve response times but may impact performance. Use default settings as a starting point and adjust based on your system's capabilities.
 
-### Using Radio Bus Events for Automations
+---
 
-The Light Manager Air can receive radio bus events, which can be used to trigger automations in Home Assistant. The default entity ID for radio signals is `event.radio_signal`. Automations can be configured to listen for specific radio signals by using the event trigger. For example, you can set up a trigger in Home Assistant that listens for the `radio_signal` event with a specific code:
+## 🔄 Synchronizing the Light Manager Air Configuration
+
+Whenever you make changes in AirStudio (for example adding, renaming or removing zones, actuators or scenes), Home Assistant can synchronize its configuration with the current Light Manager Air configuration.
+
+### Available options
+
+You can start the synchronization in two different ways:
+
+- Press the **Synchronize** button on the Light Manager Air device.
+- Call the service:
+
+```text
+light_manager_air.reload_fixtures
+```
+
+If you have multiple Light Manager Air devices, you can optionally provide the corresponding `entry_id`.
+
+### What happens during synchronization?
+
+The integration compares the current Light Manager Air configuration with the existing Home Assistant entities and automatically performs the following tasks:
+
+- ✅ Detects newly created zones
+- ✅ Detects newly created actuators
+- ✅ Detects newly created scenes
+- ✅ Removes deleted zones
+- ✅ Removes deleted actuators
+- ✅ Detects entity type changes (for example Cover → Switch)
+- ✅ Keeps existing entity IDs whenever possible
+
+After the synchronization has finished, a notification summarizes the result.
+
+> **Note:** The Light Manager Air does not automatically notify Home Assistant when its configuration changes. Therefore, synchronization must be started manually after making changes in AirStudio.
+
+---
+
+## 📡 Radio Learning & Automation
+
+The Light Manager Air integration includes a built-in radio learning mode that makes it easy to discover new 433 MHz and 868 MHz radio signals and create Home Assistant automations.
+
+### Starting Learning Mode
+
+Learning mode can be started in two different ways:
+
+- Press the **Learn Radio Signal** button on the Light Manager Air device.
+- Call the service:
+
+```text
+light_manager_air.start_radio_learning
+```
+
+The integration will wait for the next received radio signal.
+
+---
+
+### Learned Signal Event
+
+When a signal is received while learning mode is active, the integration fires the event:
+
+```text
+light_manager_air_radio_signal_learned
+```
+
+Example event data:
 
 ```yaml
-triggers:
-  - trigger: event
-    event_type: radio_signal
-    event_data:
-      code: rfit_14734E8A
+code: rffs_E3C20100
+protocol: RFFS
+raw_code: E3C20100
 ```
+
+At the same time a persistent notification is created in Home Assistant showing the received signal.
+
+---
 
 ### Last Radio Signal Sensor
 
-Entity:
+The entity
 
+```text
 sensor.last_radio_signal
+```
 
-State example:
+is updated whenever a new radio signal is received.
 
-rffs_E3C20100
+Besides the current signal it also stores useful diagnostic information:
 
-Attributes:
+- Protocol
+- Raw Code
+- Repeat Counter
+- Signal Counter
+- Reception Timestamp
+- History of the last 20 received signals
 
--   code
--   protocol
--   raw_code
--   received_at
--   last_received
--   signal_count
--   repeat_count
--   history
+This makes it easy to analyse unknown radio devices.
 
 Example:
 
@@ -152,28 +236,42 @@ Example:
       - "2026-07-02 12:28:08 | rffs_E3C20100"
       - "2026-07-02 12:27:59 | rffs_E3C20100"
       - "2026-07-02 12:27:41 | rffs_270B0412"
+      
+---
 
-### Radio Learning Mode
+### Radio Event
 
-Start via service:
+Every received radio signal is also exposed as a Home Assistant event:
 
-light_manager_air.start_radio_learning
+```text
+event.radio_signal
+```
 
-or with the Learn Radio Signal button.
+This allows automations to react instantly to received RF commands.
 
-The integration waits for the next received signal and fires:
+Example:
 
-light_manager_air_radio_signal_learned
+```yaml
+triggers:
+  - trigger: event
+    event_type: radio_signal
+    event_data:
+      code: rffs_E3C20100
+```
 
-Example event:
+---
 
-    code: rffs_E3C20100
-    protocol: RFFS
-    raw_code: E3C20100
+### Automation Generator
 
-The normal event.radio_signal and sensor.last_radio_signal continue to
-work.
+After learning a radio signal you can press the **Show Automation YAML** button.
 
+The integration automatically generates a ready-to-use Home Assistant automation template based on the last learned signal.
+
+Simply copy the generated YAML into one of your automations and adjust the actions to your needs.
+
+This greatly simplifies the creation of automations for new radio devices.
+
+---
 
 ### Cover Timings
 
@@ -238,16 +336,23 @@ light_manager_air:
       actuator_name: "Ceiling Light"
       target_type: "switch"
 ```
-## Changelog
+## 📋 Changelog
 
-### 1.3.0-beta.3
+The complete release history is available in the
+[CHANGELOG](CHANGELOG.md).
 
-- Added Last Radio Signal sensor
-- Added signal history
-- Added repeat counter
-- Added signal counter
-- Added Learn Radio Signal service
-- Added Learn Radio Signal button
-- Added Reload Fixtures service
-- Marker entities moved into a dedicated device
+## 1.3.0-beta.11
+
+#### Added
+- Native Home Assistant localization support
+- Translation keys for buttons
+- Translation keys for diagnostic sensors
+- German translations
+- English translations
+
+#### Improved
+- Home Assistant native multilingual support
+- Entity naming according to Home Assistant standards
+
+#### Fixed
 - Various bug fixes

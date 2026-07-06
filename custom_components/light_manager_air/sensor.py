@@ -10,6 +10,8 @@ from homeassistant.components.sensor import (
 from homeassistant.const import (
     UnitOfTemperature,
     PERCENTAGE,
+    CONF_HOST,
+    EntityCategory,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
@@ -33,6 +35,12 @@ async def async_setup_entry(
 
     entities = [
         LightManagerAirLastRadioSignalSensor(coordinator),
+        LightManagerAirIPAddressSensor(coordinator),
+        LightManagerAirConnectionStatusSensor(coordinator),
+        LightManagerAirCountSensor(coordinator, "zone_count", "zones", "mdi:folder-home", lambda c: len(c.zones)),
+        LightManagerAirCountSensor(coordinator, "actuator_count", "actuators", "mdi:devices", lambda c: sum(len(zone.actuators) for zone in c.zones)),
+        LightManagerAirCountSensor(coordinator, "scene_count", "scenes", "mdi:movie-open", lambda c: len(c.scenes)),
+        LightManagerAirCountSensor(coordinator, "marker_count", "markers", "mdi:bookmark-check-outline", lambda c: len(c.markers)),
     ]
 
     for channel in coordinator.weather_channels:
@@ -105,11 +113,71 @@ class LightManagerAirHumiditySensor(LightManagerAirBaseEntity, WeatherChannelMix
         return channel.humidity if channel else None 
 
 
+class LightManagerAirDiagnosticSensor(SensorEntity):
+    """Base class for Light Manager Air diagnostic sensors."""
+
+    _attr_has_entity_name = True
+    _attr_entity_category = EntityCategory.DIAGNOSTIC
+
+    def __init__(self, coordinator: LightManagerAirCoordinator, unique_suffix: str, translation_key: str, icon: str | None = None) -> None:
+        """Initialize the diagnostic sensor."""
+        self._coordinator = coordinator
+        self._attr_unique_id = f"{coordinator.device_id}_{unique_suffix}"
+        self._attr_device_info = coordinator.device_info
+        self._attr_translation_key = translation_key
+        if icon:
+            self._attr_icon = icon
+
+
+class LightManagerAirIPAddressSensor(LightManagerAirDiagnosticSensor):
+    """Sensor exposing the configured Light Manager Air IP/host."""
+
+    def __init__(self, coordinator: LightManagerAirCoordinator) -> None:
+        """Initialize the IP address sensor."""
+        super().__init__(coordinator, "ip_address", "ip_address", "mdi:ip-network")
+
+    @property
+    def native_value(self) -> str | None:
+        """Return configured IP/host."""
+        return self._coordinator.entry.data.get(CONF_HOST)
+
+
+class LightManagerAirConnectionStatusSensor(LightManagerAirDiagnosticSensor):
+    """Sensor exposing whether the coordinator currently considers the hub online."""
+
+    def __init__(self, coordinator: LightManagerAirCoordinator) -> None:
+        """Initialize the connection status sensor."""
+        super().__init__(coordinator, "connection_status", "connection_status", "mdi:lan-connect")
+
+    @property
+    def native_value(self) -> str:
+        """Return online/offline status."""
+        if self._coordinator.light_manager and self._coordinator.last_update_success:
+            return "online"
+        return "offline"
+
+
+class LightManagerAirCountSensor(LightManagerAirDiagnosticSensor):
+    """Sensor exposing counts from the loaded Light Manager Air XML."""
+
+    _attr_state_class = SensorStateClass.MEASUREMENT
+
+    def __init__(self, coordinator: LightManagerAirCoordinator, unique_suffix: str, name: str, icon: str, value_fn) -> None:
+        """Initialize the count sensor."""
+        super().__init__(coordinator, unique_suffix, name, icon)
+        self._value_fn = value_fn
+
+    @property
+    def native_value(self) -> int:
+        """Return the current count."""
+        return int(self._value_fn(self._coordinator))
+
+
 class LightManagerAirLastRadioSignalSensor(SensorEntity):
     """Sensor exposing received Light Manager Air radio signal information."""
 
     _attr_has_entity_name = True
-    _attr_name = "Last Radio Signal"
+    _attr_translation_key = "last_radio_signal"
     _attr_icon = "mdi:radio-tower"
 
     def __init__(self, coordinator: LightManagerAirCoordinator) -> None:

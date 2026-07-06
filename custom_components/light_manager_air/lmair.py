@@ -549,6 +549,19 @@ class LMAir(_LMFixture):
         command = LMCommand(self._connector, name="raw", cmd=payload)
         command.call()
 
+    def load_config_xml_text(self, force_reload: bool = True) -> str:
+        """Load and return the raw config.xml text from the Light Manager Air.
+
+        When force_reload is true, the cached parsed XML is refreshed from the
+        same raw text so that diagnostics and parsed fixtures use the same
+        source data.
+        """
+        response = self._connector.send("/config.xml")
+        xml_text = response.content.decode()
+        if force_reload:
+            self._config = ET.fromstring(xml_text)
+        return xml_text
+
     def load_fixtures(self, force_reload: bool = False) -> (List[LMZone], List[LMCommand]):
         """Loads all fixtures (zones, actuators, and scenes).
 

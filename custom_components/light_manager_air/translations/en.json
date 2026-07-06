@@ -41,5 +41,54 @@
                 }
             }
         }
+    },
+    "entity": {
+        "button": {
+            "synchronize": {
+                "name": "Synchronize"
+            },
+            "export_xml": {
+                "name": "Export XML"
+            },
+            "learn_radio_signal": {
+                "name": "Learn Radio Signal"
+            },
+            "show_radio_automation_yaml": {
+                "name": "Show Automation YAML"
+            }
+        },
+        "sensor": {
+            "last_radio_signal": {
+                "name": "Last Radio Signal"
+            },
+            "ip_address": {
+                "name": "IP Address"
+            },
+            "connection_status": {
+                "name": "Connection Status"
+            },
+            "zones": {
+                "name": "Zones"
+            },
+            "actuators": {
+                "name": "Actuators"
+            },
+            "scenes": {
+                "name": "Scenes"
+            },
+            "markers": {
+                "name": "Markers"
+            }
+        },
+        "event": {
+            "radio_signal": {
+                "name": "Radio Signal"
+            }
+        },
+        "remote": {
+            "remote": {
+                "name": "Remote"
+            }
+        }
     }
-} 
+}

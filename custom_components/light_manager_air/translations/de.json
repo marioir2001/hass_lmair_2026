@@ -41,5 +41,54 @@
                 }
             }
         }
+    },
+    "entity": {
+        "button": {
+            "synchronize": {
+                "name": "Synchronisieren"
+            },
+            "export_xml": {
+                "name": "XML exportieren"
+            },
+            "learn_radio_signal": {
+                "name": "Funksignal lernen"
+            },
+            "show_radio_automation_yaml": {
+                "name": "Automations-YAML anzeigen"
+            }
+        },
+        "sensor": {
+            "last_radio_signal": {
+                "name": "Letztes Funksignal"
+            },
+            "ip_address": {
+                "name": "IP-Adresse"
+            },
+            "connection_status": {
+                "name": "Verbindungsstatus"
+            },
+            "zones": {
+                "name": "Zonen"
+            },
+            "actuators": {
+                "name": "Aktoren"
+            },
+            "scenes": {
+                "name": "Szenen"
+            },
+            "markers": {
+                "name": "Marker"
+            }
+        },
+        "event": {
+            "radio_signal": {
+                "name": "Funksignal"
+            }
+        },
+        "remote": {
+            "remote": {
+                "name": "Remote"
+            }
+        }
     }
-} 
+}

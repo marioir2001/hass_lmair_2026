@@ -35,7 +35,7 @@ class LightManagerAirRadioEvent(EventEntity):
     _attr_device_class = EventDeviceClass.BUTTON
     _attr_event_types = ["radio_signal"]
     _attr_has_entity_name = True
-    _attr_name = "Radio Signal"
+    _attr_translation_key = "radio_signal"
 
     def __init__(self, coordinator: LightManagerAirCoordinator) -> None:
         """Initialize the event."""
