@@ -31,15 +31,19 @@ New features include:
 - 📍 Markers
 - 🌦 Weather stations
 
-### Smart Synchronization
+### 🔄 Smart Synchronization
 
-- 🔄 Synchronize button
-- Automatic XML reload
+The integration provides a built-in synchronization mechanism to keep Home Assistant in sync with the current Light Manager Air configuration.
+
+Features:
+
+- One-click synchronization
 - Automatic discovery of new devices
 - Automatic discovery of new zones
-- Automatic cleanup of removed devices
-- Automatic cleanup of removed zones
-- Automatic entity type migration (Cover → Switch, etc.)
+- Automatic removal of deleted devices
+- Automatic removal of deleted zones
+- Automatic entity type migration (e.g. Cover → Switch)
+- Stable entity IDs whenever possible
 
 ### Radio Support
 
@@ -101,16 +105,38 @@ It is crucial that each combination of zone and actuator name in the Light Manag
 
 ---
 
-## Reloading devices and scenes after changes
+## 🔄 Synchronizing the Light Manager Air Configuration
 
-When you add or rename zones, actuators, or scenes in the Light Manager Air, Home Assistant needs a reload to pick them up. The integration now exposes a service for this:
+Whenever you make changes in AirStudio (for example adding, renaming or removing zones, actuators or scenes), Home Assistant can synchronize its configuration with the current Light Manager Air configuration.
 
-- Call service `light_manager_air.reload_fixtures` (optional data: `entry_id` if you have multiple instances) to refresh devices and entities from the Light Manager.
-- Alternatively, go to **Settings → Devices & Services → Light Manager Air → Reload** in the UI.
+### Available options
 
-The service performs a full config-entry reload, so entity IDs stay stable but new devices/scenes become available without reinstalling the integration.
+You can start the synchronization in two different ways:
 
----
+- Press the **Synchronize** button on the Light Manager Air device.
+- Call the service:
+
+```text
+light_manager_air.reload_fixtures
+```
+
+If you have multiple Light Manager Air devices, you can optionally provide the corresponding `entry_id`.
+
+### What happens during synchronization?
+
+The integration compares the current Light Manager Air configuration with the existing Home Assistant entities and automatically performs the following tasks:
+
+- ✅ Detects newly created zones
+- ✅ Detects newly created actuators
+- ✅ Detects newly created scenes
+- ✅ Removes deleted zones
+- ✅ Removes deleted actuators
+- ✅ Detects entity type changes (for example Cover → Switch)
+- ✅ Keeps existing entity IDs whenever possible
+
+After the synchronization has finished, a notification summarizes the result.
+
+> **Note:** The Light Manager Air does not automatically notify Home Assistant when its configuration changes. Therefore, synchronization must be started manually after making changes in AirStudio.
 
 ## Configuration
 
