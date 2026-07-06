@@ -1,9 +1,7 @@
 ![GitHub release (latest by date)](https://img.shields.io/github/v/release/kmifka/hass_lmair)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-2025.6+-41BDF5.svg)
-
 ![HACS](https://img.shields.io/badge/HACS-Custom-orange.svg)
 
-![License](https://img.shields.io/github/license/marioir2001/hass_lmair_2026)
 
 # Light Manager Air for Home Assistant
 
