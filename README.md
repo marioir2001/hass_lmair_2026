@@ -285,28 +285,6 @@ Example:
       - "2026-07-02 12:27:59 | rffs_E3C20100"
       - "2026-07-02 12:27:41 | rffs_270B0412"
 
-### Radio Learning Mode
-
-Start via service:
-
-light_manager_air.start_radio_learning
-
-or with the Learn Radio Signal button.
-
-The integration waits for the next received signal and fires:
-
-light_manager_air_radio_signal_learned
-
-Example event:
-
-    code: rffs_E3C20100
-    protocol: RFFS
-    raw_code: E3C20100
-
-The normal event.radio_signal and sensor.last_radio_signal continue to
-work.
-
-
 ### Cover Timings
 
 You can now configure covers to display their current position and set positions based on opening and closing times. To do this, add the following configuration to your `configuration.yaml` file:
