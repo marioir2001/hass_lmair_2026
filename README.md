@@ -322,6 +322,17 @@ The exported XML is useful for:
 
 ---
 
+## 🔧 Services
+
+| Service | Description |
+|----------|-------------|
+| reload_fixtures | Synchronize the Light Manager configuration |
+| export_xml | Export the current XML configuration |
+| start_radio_learning | Start radio learning mode |
+| show_radio_automation_yaml | Generate an automation template |
+
+---
+
 ### Cover Timings
 
 You can now configure covers to display their current position and set positions based on opening and closing times. To do this, add the following configuration to your `configuration.yaml` file:
