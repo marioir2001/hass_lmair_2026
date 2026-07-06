@@ -11,12 +11,12 @@ from homeassistant.const import (
     UnitOfTemperature,
     PERCENTAGE,
     CONF_HOST,
+    EntityCategory,
 )
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
 from homeassistant.util import dt as dt_util
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.entity import EntityCategory
 
 from .base_entity import LightManagerAirBaseEntity
 from .const import DOMAIN, WEATHER_CHANNEL_NAME_TEMPLATE

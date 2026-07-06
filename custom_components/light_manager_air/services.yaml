@@ -1,6 +1,6 @@
 reload_fixtures:
-  name: Reload fixtures
-  description: Reload the Light Manager Air configuration from the device.
+  name: Synchronize Light Manager Air
+  description: Reload and synchronize the Light Manager Air configuration from the device. A notification with sync statistics is created after completion.
   fields:
     entry_id:
       name: Entry ID
@@ -87,6 +87,18 @@ show_radio_automation_yaml:
     code:
       name: Radio code
       description: Optional radio code. If omitted, the last learned radio signal is used.
+      required: false
+      selector:
+        text:
+
+
+export_xml:
+  name: Export XML
+  description: Load the current config.xml from the Light Manager Air and save it under /config/light_manager_air/debug_config.xml plus a timestamped snapshot.
+  fields:
+    entry_id:
+      name: Entry ID
+      description: Optional config entry ID. Leave empty when only one Light Manager Air is configured.
       required: false
       selector:
         text:

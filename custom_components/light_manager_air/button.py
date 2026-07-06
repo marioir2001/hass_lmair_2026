@@ -14,6 +14,7 @@ from .const import (
     SERVICE_RELOAD_FIXTURES,
     SERVICE_START_RADIO_LEARNING,
     SERVICE_SHOW_RADIO_AUTOMATION_YAML,
+    SERVICE_EXPORT_XML,
     ATTR_ENTRY_ID,
 )
 from .coordinator import LightManagerAirCoordinator
@@ -33,6 +34,7 @@ async def async_setup_entry(
         LightManagerAirSynchronizeButton(coordinator, entry.entry_id),
         LightManagerAirLearnRadioSignalButton(coordinator, entry.entry_id),
         LightManagerAirRadioAutomationYamlButton(coordinator),
+        LightManagerAirExportXmlButton(coordinator, entry.entry_id),
     ]
 
     for zone in coordinator.zones:
@@ -210,6 +212,31 @@ class LightManagerAirRadioAutomationYamlButton(ButtonEntity):
         await self.hass.services.async_call(
             DOMAIN,
             SERVICE_SHOW_RADIO_AUTOMATION_YAML,
+    SERVICE_EXPORT_XML,
             {},
+            blocking=False,
+        )
+
+
+class LightManagerAirExportXmlButton(ButtonEntity):
+    """Button that exports the current Light Manager Air XML to /config."""
+
+    _attr_has_entity_name = True
+    _attr_name = "Export XML"
+    _attr_icon = "mdi:file-export-outline"
+
+    def __init__(self, coordinator, entry_id):
+        """Initialize the export XML button."""
+        self._coordinator = coordinator
+        self._entry_id = entry_id
+        self._attr_unique_id = f"{coordinator.device_id}_export_xml"
+        self._attr_device_info = coordinator.device_info
+
+    async def async_press(self) -> None:
+        """Export the current Light Manager Air XML."""
+        await self.hass.services.async_call(
+            DOMAIN,
+            SERVICE_EXPORT_XML,
+            {ATTR_ENTRY_ID: self._entry_id},
             blocking=False,
         )

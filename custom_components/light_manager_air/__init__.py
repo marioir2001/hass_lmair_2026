@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
+from pathlib import Path
 
 import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry
@@ -29,6 +31,7 @@ from .const import (
     SERVICE_SEND_RAW_COMMAND,
     SERVICE_START_RADIO_LEARNING,
     SERVICE_SHOW_RADIO_AUTOMATION_YAML,
+    SERVICE_EXPORT_XML,
     ATTR_ZONE,
     ATTR_ACTUATOR,
     ATTR_COMMAND,
@@ -77,6 +80,8 @@ START_RADIO_LEARNING_SERVICE_SCHEMA = vol.Schema({
 SHOW_RADIO_AUTOMATION_YAML_SERVICE_SCHEMA = vol.Schema({
     vol.Optional(ATTR_CODE): cv.string,
 })
+
+EXPORT_XML_SERVICE_SCHEMA = vol.Schema({vol.Optional(ATTR_ENTRY_ID): cv.string})
 
 
 def _parse_radio_code(code: str | None) -> tuple[str | None, str | None]:
@@ -136,8 +141,6 @@ def _create_radio_automation_notification(hass: HomeAssistant, code: str, protoc
     )
 
 
-
-
 def _count_actuators(coordinator: LightManagerAirCoordinator) -> int:
     """Return the number of actuators loaded from the Light Manager XML."""
     return sum(len(zone.actuators) for zone in coordinator.zones)
@@ -167,6 +170,22 @@ def _sync_summary_message(coordinator: LightManagerAirCoordinator, sync_stats: d
     return "\n".join(lines)
 
 
+
+def _write_xml_debug_files(base_path: str, xml_text: str) -> tuple[str, str, int]:
+    """Write the Light Manager XML debug files and return paths and size."""
+    debug_dir = Path(base_path) / "light_manager_air" / "debug"
+    debug_dir.mkdir(parents=True, exist_ok=True)
+
+    latest_path = Path(base_path) / "light_manager_air" / "debug_config.xml"
+    latest_path.parent.mkdir(parents=True, exist_ok=True)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    snapshot_path = debug_dir / f"config_{timestamp}.xml"
+
+    latest_path.write_text(xml_text, encoding="utf-8")
+    snapshot_path.write_text(xml_text, encoding="utf-8")
+    return str(latest_path), str(snapshot_path), len(xml_text.encode("utf-8"))
+
 def _expected_entity_registry_keys(hass: HomeAssistant, coordinator: LightManagerAirCoordinator) -> set[tuple[str, str]]:
     """Build the entity registry keys that should exist for the current XML/config.
 
@@ -191,6 +210,7 @@ def _expected_entity_registry_keys(hass: HomeAssistant, coordinator: LightManage
         ("button", f"{device_id}_learn_radio_signal"),
         ("button", f"{device_id}_show_radio_automation_yaml"),
         ("button", f"{device_id}_synchronize"),
+        ("button", f"{device_id}_export_xml"),
         ("sensor", f"{device_id}_ip_address"),
         ("sensor", f"{device_id}_connection_status"),
         ("sensor", f"{device_id}_zone_count"),
@@ -551,6 +571,48 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         await hass.async_add_executor_job(coordinator.light_manager.send_raw_command, payload)
         await coordinator.async_refresh()
 
+    async def _async_handle_export_xml_service(call):
+        coordinator = _get_service_coordinator(call.data.get(ATTR_ENTRY_ID))
+        xml_text = await hass.async_add_executor_job(
+            coordinator.light_manager.load_config_xml_text,
+            True,
+        )
+        # Refresh parsed fixtures from the same XML source so the next diagnostics
+        # and sync cycle use exactly what was exported.
+        coordinator.zones, coordinator.scenes = await hass.async_add_executor_job(
+            coordinator.light_manager.load_fixtures,
+            False,
+        )
+        latest_path, snapshot_path, size_bytes = await hass.async_add_executor_job(
+            _write_xml_debug_files,
+            hass.config.path(),
+            xml_text,
+        )
+        hass.data[DOMAIN].setdefault("xml_debug", {})[coordinator.entry.entry_id] = {
+            "latest_path": latest_path,
+            "snapshot_path": snapshot_path,
+            "size_bytes": size_bytes,
+            "zones": len(coordinator.zones),
+            "actuators": _count_actuators(coordinator),
+            "scenes": len(coordinator.scenes),
+            "exported_at": datetime.now().isoformat(),
+        }
+        persistent_notification.async_create(
+            hass,
+            "\n".join([
+                "Die aktuelle config.xml wurde vom Light Manager Air geladen und gespeichert.",
+                "",
+                f"**Letzte XML:** `{latest_path}`",
+                f"**Snapshot:** `{snapshot_path}`",
+                f"**Größe:** {size_bytes} Bytes",
+                f"**Zonen:** {len(coordinator.zones)}",
+                f"**Aktoren/Geräte:** {_count_actuators(coordinator)}",
+                f"**Szenen:** {len(coordinator.scenes)}",
+            ]),
+            title="Light Manager Air XML exportiert",
+            notification_id="light_manager_air_xml_export",
+        )
+
     async def _async_handle_reload_service(call):
         target_entry_id = call.data.get(ATTR_ENTRY_ID, entry.entry_id)
         await hass.config_entries.async_reload(target_entry_id)
@@ -604,6 +666,14 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             schema=SHOW_RADIO_AUTOMATION_YAML_SERVICE_SCHEMA,
         )
 
+    if not hass.services.has_service(DOMAIN, SERVICE_EXPORT_XML):
+        hass.services.async_register(
+            DOMAIN,
+            SERVICE_EXPORT_XML,
+            _async_handle_export_xml_service,
+            schema=EXPORT_XML_SERVICE_SCHEMA,
+        )
+
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
 
     return True
@@ -617,7 +687,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entries.discard(entry.entry_id)
 
         if not entries:
-            for service in (SERVICE_RELOAD_FIXTURES, SERVICE_SEND_COMMAND, SERVICE_SEND_RAW_COMMAND, SERVICE_START_RADIO_LEARNING, SERVICE_SHOW_RADIO_AUTOMATION_YAML):
+            for service in (SERVICE_RELOAD_FIXTURES, SERVICE_SEND_COMMAND, SERVICE_SEND_RAW_COMMAND, SERVICE_START_RADIO_LEARNING, SERVICE_SHOW_RADIO_AUTOMATION_YAML, SERVICE_EXPORT_XML):
                 if hass.services.has_service(DOMAIN, service):
                     hass.services.async_remove(DOMAIN, service)
 
