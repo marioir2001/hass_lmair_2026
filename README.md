@@ -141,7 +141,7 @@ You can customize these intervals to suit your needs or disable polling entirely
 
 1. Navigate to **Settings** → **Devices & Services**.
 2. Locate the Light Manager Air integration and click **Options**.
-3. Set your desired intervals or disable polling by uncheck the checkbox.
+3. Set your desired intervals or disable polling by clearing the checkbox.
 
 ⚠️ **Warning**: Short intervals improve response times but may impact performance. Use default settings as a starting point and adjust based on your system's capabilities.
 
@@ -197,7 +197,7 @@ Learning mode can be started in two different ways:
 light_manager_air.start_radio_learning
 ```
 
-The integration will wait for the next received radio signal.
+The integration waits for the next received radio signal.
 
 ---
 
@@ -411,19 +411,6 @@ light_manager_air:
 
 The complete release history is available in the
 [CHANGELOG](CHANGELOG.md).
-
-## 1.3.0-beta.11
-
-#### Added
-- Native Home Assistant localization support
-- Translation keys for buttons
-- Translation keys for diagnostic sensors
-- German translations
-- English translations
-
-#### Improved
-- Home Assistant native multilingual support
-- Entity naming according to Home Assistant standards
 
 #### Fixed
 - Various bug fixes
