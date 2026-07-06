@@ -42,6 +42,21 @@ The goal is to continuously improve the integration while keeping full compatibi
 
 ---
 
+## Contents
+
+- [Features](#-features)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Synchronizing the Light Manager Air Configuration](#-synchronizing-the-light-manager-air-configuration)
+- [Radio Learning & Automation](#-radio-learning--automation)
+- [Diagnostics](#-diagnostics)
+- [Services](#-services)
+- [Buttons](#-buttons)
+- [Configuration Examples](#-configuration-examples)
+- [Changelog](#-changelog)
+
+---
+
 ## ✨ Features
 
 ### Device Support
@@ -82,21 +97,6 @@ Features:
 - Device statistics
 - Zone statistics
 - Marker statistics
-
----
-
-## Contents
-
-- [Features](#-features)
-- [Installation](#installation)
-- [Configuration](#configuration)
-- [Synchronizing the Light Manager Air Configuration](#-synchronizing-the-light-manager-air-configuration)
-- [Radio Learning & Automation](#-radio-learning--automation)
-- [Diagnostics](#-diagnostics)
-- [Services](#-services)
-- [Buttons](#-buttons)
-- [Configuration Examples](#configuration-examples)
-- [Changelog](#-changelog)
 
 ---
 
