@@ -85,6 +85,21 @@ Features:
 
 ---
 
+## Contents
+
+- [Features](#-features)
+- [Installation](#installation)
+- [Configuration](#configuration)
+- [Synchronizing the Light Manager Air Configuration](#-synchronizing-the-light-manager-air-configuration)
+- [Radio Learning & Automation](#-radio-learning--automation)
+- [Diagnostics](#-diagnostics)
+- [Services](#-services)
+- [Buttons](#-buttons)
+- [Configuration Examples](#configuration-examples)
+- [Changelog](#-changelog)
+
+---
+
 ## Installation
 
 ### Option 1: Manual Installation
