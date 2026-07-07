@@ -415,7 +415,9 @@ async def _async_cleanup_removed_entities(
         if (entity_entry.domain, entity_entry.unique_id) in expected:
             continue
         registry.async_remove(entity_entry.entity_id)
-        removed.append(entity_entry.entity_id)
+        removed.append(
+            _entity_label_from_key((entity_entry.domain, entity_entry.unique_id))
+        )
 
     if removed:
         _LOGGER.info(
