@@ -152,7 +152,7 @@ def _format_sync_list(items: list[str] | tuple[str, ...] | None, limit: int = 10
     if not values:
         return ["_Keine_"]
     shown = values[:limit]
-    lines = [f"- `{item}`" for item in shown]
+    lines = [f"- {item}" for item in shown]
     remaining = len(values) - len(shown)
     if remaining > 0:
         lines.append(f"- … und {remaining} weitere")
