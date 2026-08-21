@@ -18,6 +18,9 @@ from .const import (
     ATTR_ENTRY_ID,
 )
 from .coordinator import LightManagerAirCoordinator
+from .cover import LightManagerAirCover
+from .light import LightManagerAirLight
+from .switch import LightManagerAirSwitch
 from .entity_utils import command_name, get_on_command, is_single_action_actuator
 
 _BASIC_NAMES = {"on", "off", "toggle", "ein", "an", "aus", "einschalten", "ausschalten", "umschalten"}
@@ -41,6 +44,15 @@ async def async_setup_entry(
         if LightManagerAirBaseEntity.is_zone_ignored(zone.name, hass):
             continue
         for actuator in zone.actuators:
+            # Native entities already expose their supported commands in Home Assistant.
+            # Do not create duplicate command buttons for covers, lights or switches.
+            if (
+                LightManagerAirCover.check_actuator(actuator, zone.name, hass)
+                or LightManagerAirLight.check_actuator(actuator, zone.name, hass)
+                or LightManagerAirSwitch.check_actuator(actuator, zone.name, hass)
+            ):
+                continue
+
             # AirStudio command-style entries that only have Taste 1 programmed
             # are stateless actions and should be exposed as one button using
             # the actuator name. Taste 2/off being programmed keeps the legacy
