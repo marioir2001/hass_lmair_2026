@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+from html import unescape
 import socket
 import xml.etree.ElementTree as ET
 from time import time
@@ -187,6 +188,53 @@ class _LMConnector:
         params = self.load_params()
         return params.get("marker state", "")
 
+    def load_marker_names(self) -> dict[int, str]:
+        """Load marker names from the local Light Manager WebIF.
+
+        The dashboard exposes markers as elements like::
+
+            <div class="mk" id="m0">Heizung Auto</div>
+
+        WebIF marker IDs are zero-based (m0..m127), matching the marker IDs
+        used internally by the integration.
+        """
+        html_text = None
+
+        # Current Light Manager Air firmware serves the dashboard on the root
+        # path. Keep /index.htm as a compatibility fallback for older firmware.
+        for path in ("/", "/index.htm"):
+            try:
+                response = self.send(path, check_response=False)
+            except ConnectionError:
+                continue
+
+            if response.status_code != 200:
+                continue
+
+            candidate = response.content.decode("utf-8", errors="replace")
+            if 'id="m' in candidate or "id='m" in candidate:
+                html_text = candidate
+                break
+
+        if not html_text:
+            return {}
+
+        marker_names: dict[int, str] = {}
+        pattern = re.compile(
+            r'<div\b[^>]*\bid=["\']m(\d+)["\'][^>]*>(.*?)</div>',
+            re.IGNORECASE | re.DOTALL,
+        )
+
+        for marker_id_text, inner_html in pattern.findall(html_text):
+            # Marker names are plain text in the current WebIF. Strip any
+            # unexpected nested tags as a defensive fallback.
+            name = re.sub(r"<[^>]+>", "", inner_html)
+            name = unescape(name).strip()
+            if name:
+                marker_names[int(marker_id_text)] = name
+
+        return marker_names
+
     @property
     def marker_states(self) -> str:
         """
@@ -311,12 +359,14 @@ class LMActuator(_LMCommandContainer):
 class LMMarker(_LMCommandContainer):
     """Describes a marker."""
 
-    def __init__(self, marker_id: int, state: bool, connector: _LMConnector):
+    def __init__(self, marker_id: int, state: bool, connector: _LMConnector, name: str = None):
         """
-        :param marker_id: ID of the marker
+        :param marker_id: Zero-based ID of the marker
+        :param state: Current marker state
         :param connector: Light Manager connector
+        :param name: Optional marker name from the Light Manager WebIF
         """
-        super().__init__(f"Marker {marker_id + 1}", connector)
+        super().__init__(name or f"Marker {marker_id + 1}", connector)
         self._marker_id = marker_id
         self._state = state
         self._commands = [
@@ -453,6 +503,7 @@ class LMAir(_LMFixture):
         self._password = password
         self._connector = _LMConnector(self._lm_url, self._username, self._password, adapter_ip=adapter_ip)
         self._config = None
+        self._marker_names: dict[int, str] | None = None
 
         # Load initial params
         params = self._connector.load_params()
@@ -575,12 +626,37 @@ class LMAir(_LMFixture):
         scenes = [LMCommand(self._connector, config=scene) for scene in self._config.findall("./lightscenes/scene")]
         return zones, scenes
 
+    def load_marker_names(self, force_reload: bool = False) -> dict[int, str]:
+        """Return cached marker names, refreshing them from the WebIF when requested.
+
+        Marker names are intentionally not fetched during every marker-state poll.
+        They are loaded once per Light Manager instance (which also means after a
+        Home Assistant integration reload/synchronization) and then cached.
+        """
+        if force_reload or self._marker_names is None:
+            try:
+                self._marker_names = self._connector.load_marker_names()
+            except Exception as exc:  # Names are optional; marker states must keep working.
+                _LOGGER.warning("Unable to load Light Manager marker names from WebIF: %s", exc)
+                self._marker_names = {}
+
+            if self._marker_names:
+                _LOGGER.debug(
+                    "Loaded %s marker names from Light Manager WebIF",
+                    len(self._marker_names),
+                )
+            else:
+                _LOGGER.debug("No marker names found in Light Manager WebIF; using fallback names")
+
+        return self._marker_names
+
     def load_markers(self) -> List[LMMarker]:
-        """Loads all markers.
+        """Load all markers with current states and cached WebIF names.
 
         :return: List of all markers
         """
         marker_states = self._connector.load_marker_states()
+        marker_names = self.load_marker_names()
 
         markers = []
         if marker_states:
@@ -589,7 +665,8 @@ class LMAir(_LMFixture):
                     markers.append(LMMarker(
                         marker_id=i,
                         state=state == "1",
-                        connector=self._connector
+                        connector=self._connector,
+                        name=marker_names.get(i),
                     ))
 
         return markers
