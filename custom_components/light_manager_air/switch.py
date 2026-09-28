@@ -3,7 +3,6 @@ from __future__ import annotations
 
 from homeassistant.components.switch import SwitchEntity
 from homeassistant.config_entries import ConfigEntry
-from homeassistant.helpers.entity import EntityCategory
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
@@ -55,7 +54,6 @@ class LightManagerAirMarkerSwitch(LightManagerAirBaseEntity, ToggleCommandMixin,
             unique_id_suffix=f"marker_{marker.marker_id}",
         )
         self._marker_id = marker.marker_id
-        self._attr_entity_category = EntityCategory.DIAGNOSTIC
         # Marker are mostly helper/state objects. Keep them available for
         # users who need marker-based automations, but do not enable the
         # potentially large marker set by default in the entity registry.

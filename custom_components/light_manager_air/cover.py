@@ -83,6 +83,11 @@ class LightManagerAirCover(LightManagerAirBaseEntity, ToggleCommandMixin, CoverE
         else:
             # Normal LightManager cover setup
             unique_id = f"{zone.name}_{actuator.name}"
+            # Explicitly include the zone in the suggested object id.  The
+            # unique_id already contains zone + actuator; this additionally
+            # prevents ambiguous generated entity ids for repeated names such
+            # as "Tür" or "Fenster" in different zones.
+            self._attr_suggested_object_id = f"{zone.name}_{actuator.name}"
             super().__init__(
                 coordinator=coordinator,
                 command_container=actuator,
@@ -153,14 +158,27 @@ class LightManagerAirCover(LightManagerAirBaseEntity, ToggleCommandMixin, CoverE
         up_time = None
         down_time = None
         target_entity_id = self._external_entity_id if self._is_external else self.entity_id
-        
+
         if self.coordinator.hass.data[DOMAIN].get(CONF_COVER_TIMINGS):
-            for entry in self.coordinator.hass.data[DOMAIN][CONF_COVER_TIMINGS]:
-                if entry[CONF_ENTITY_ID] == target_entity_id:
-                    up_time = entry[CONF_TRAVEL_UP_TIME]
-                    down_time = entry.get(CONF_TRAVEL_DOWN_TIME) or up_time
-                    self._custom_stop_logic = entry.get(CONF_CUSTOM_STOP_LOGIC)
-                    self._invert_directions = entry.get(CONF_INVERT_DIRECTIONS, False)
+            for timing_entry in self.coordinator.hass.data[DOMAIN][CONF_COVER_TIMINGS]:
+                configured_entity_id = timing_entry.get(CONF_ENTITY_ID)
+                matches_entity_id = bool(configured_entity_id and configured_entity_id == target_entity_id)
+
+                # beta.2: Native Light Manager covers can also be addressed by
+                # their stable AirStudio identity (zone + actuator).  This is
+                # independent of Home Assistant's generated entity_id and thus
+                # also works when the same actuator name exists in several zones.
+                matches_fixture = (
+                    not self._is_external
+                    and timing_entry.get(CONF_ZONE_NAME) == self._zone_name
+                    and timing_entry.get(CONF_ACTUATOR_NAME) == self._actuator.name
+                )
+
+                if matches_entity_id or matches_fixture:
+                    up_time = timing_entry[CONF_TRAVEL_UP_TIME]
+                    down_time = timing_entry.get(CONF_TRAVEL_DOWN_TIME) or up_time
+                    self._custom_stop_logic = timing_entry.get(CONF_CUSTOM_STOP_LOGIC, False)
+                    self._invert_directions = timing_entry.get(CONF_INVERT_DIRECTIONS, False)
                     if not self._is_external:
                         self._attr_supported_features |= CoverEntityFeature.SET_POSITION
                     break
@@ -168,8 +186,8 @@ class LightManagerAirCover(LightManagerAirBaseEntity, ToggleCommandMixin, CoverE
         if up_time:
             # Initialize TravelCalculator if both times are defined
             self._tc = TravelCalculator(
-                travel_time_down=int(down_time),
-                travel_time_up=int(up_time),
+                travel_time_down=float(down_time),
+                travel_time_up=float(up_time),
             )
             await self._load_stored_position()
             

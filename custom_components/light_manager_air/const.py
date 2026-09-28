@@ -147,7 +147,12 @@ CONF_INVERT_DIRECTIONS = "invert_directions"
 
 # Schema for cover-timing
 COVER_TIMING_SCHEMA = vol.Schema({
-    vol.Required(CONF_ENTITY_ID): str,
+    # Legacy/current HA entity-id targeting remains supported.  For native
+    # Light Manager covers, zone_name + actuator_name is the preferred stable
+    # selector because HA entity_ids can change or receive numeric suffixes.
+    vol.Optional(CONF_ENTITY_ID): str,
+    vol.Optional(CONF_ZONE_NAME): str,
+    vol.Optional(CONF_ACTUATOR_NAME): str,
     vol.Required(CONF_TRAVEL_UP_TIME): vol.Coerce(float),
     vol.Optional(CONF_TRAVEL_DOWN_TIME): vol.Coerce(float),
     vol.Optional(CONF_CUSTOM_STOP_LOGIC): vol.Coerce(bool),

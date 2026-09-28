@@ -1,3 +1,15 @@
+## 1.4.0-beta.2
+
+#### Fixed
+- Covers with identical actuator names in different zones are kept distinct by zone + actuator identity.
+- Added an explicit zone + actuator suggested object ID for native covers.
+- Cover timing lookup can now use stable `zone_name` + `actuator_name` selectors instead of depending only on Home Assistant entity IDs.
+- Cover travel times keep decimal precision (for example 18.5 or 12.7 seconds).
+
+#### Changed
+- Marker switches are no longer categorized as diagnostic entities; they remain normal switch entities on the Marker device.
+- Existing `entity_id` based `cover_timings` configuration remains supported for backwards compatibility.
+
 ## 1.3.0-beta.3
 
 #### Added
