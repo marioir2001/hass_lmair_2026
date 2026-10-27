@@ -539,9 +539,7 @@ def _added_device_labels_for_entry(
     """Return expected zone devices that are not currently registered."""
     device_registry = dr.async_get(hass)
     existing_identifiers: set[tuple[str, str]] = set()
-    for device in device_registry.devices.values():
-        if entry.entry_id not in device.config_entries:
-            continue
+    for device in dr.async_entries_for_config_entry(device_registry, entry.entry_id):
         existing_identifiers.update(
             identifier for identifier in device.identifiers if identifier[0] == DOMAIN
         )
@@ -591,9 +589,7 @@ async def _async_cleanup_removed_devices(
     device_registry = dr.async_get(hass)
     removed: list[str] = []
 
-    for device in list(device_registry.devices.values()):
-        if entry.entry_id not in device.config_entries:
-            continue
+    for device in list(dr.async_entries_for_config_entry(device_registry, entry.entry_id)):
 
         lmair_identifiers = {
             identifier for identifier in device.identifiers if identifier[0] == DOMAIN

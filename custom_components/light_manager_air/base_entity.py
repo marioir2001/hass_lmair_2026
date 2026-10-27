@@ -52,7 +52,7 @@ class LightManagerAirBaseEntity(ABC):
                     (DOMAIN, f"{self._attr_device_id}_{zone_name}")
                 },
                 "name": zone_name,
-                "via_device": (DOMAIN, coordinator.light_manager.mac_address),
+                "via_device_id": coordinator.device_id,
                 "model": "Zone",
                 "sw_version": coordinator.light_manager.fw_version,
                 "suggested_area": self._zone_name
